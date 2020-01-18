@@ -5,7 +5,11 @@ const University = sequelize.define('University', {
     U_Id: {
       type: DataTypes.INTEGER,
       allowNull: false,
+<<<<<<< HEAD
       primaryKey:true
+=======
+      primaryKey: true
+>>>>>>> e80e355adfeb2ced2b6267248bf043bcb98db240
     },
     U_Name: {
       type: DataTypes.STRING
@@ -26,7 +30,11 @@ const University = sequelize.define('University', {
   }, {
     // Other model options go here
     tableName: 'university',
+<<<<<<< HEAD
     timestamps:false
+=======
+    timestamps: false
+>>>>>>> e80e355adfeb2ced2b6267248bf043bcb98db240
   });
 
   module.exports = University

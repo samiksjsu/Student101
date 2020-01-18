@@ -146,9 +146,9 @@ foreign key (RPBP_From) references Airport(Air_Code)
 create table Student_Tokens (
 ST_S_Email varchar (500),
 ST_Token varchar (5000)
-)
+);
 
 create table Ride_Provider_Tokens (
 RPT_P_Email varchar (500),
 RPT_Token varchar (5000)
-)
+);

@@ -43,7 +43,7 @@ const getUniversities = async () => {
 const getNearbyAirports = async () => {
     try {
         const nearbyAirports = await NearByAirports.findAll({
-            attributes: ['N_U_Id', 'N_A_Code']
+            //attributes: ['N_U_Id', 'N_A_Code']
         })
 
         console.log(JSON.parse(JSON.stringify(nearbyAirports)))
@@ -54,8 +54,8 @@ const getNearbyAirports = async () => {
     }
 }
 
-// getUniversities()
-// getNearbyAirports()
+getUniversities()
+getNearbyAirports()
 
 
 const insertAirport = async () => {
