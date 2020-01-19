@@ -2,7 +2,8 @@ const { sequelize, DataTypes } = require('../db/conn')
 
 const RidesPostedByProvider = sequelize.define('RidesPostedByProvider', {
     RPBP_Id: {
-        type: DataTypes.INTEGER
+        type: DataTypes.INTEGER,
+        primaryKey:true
 
     }, RPBP_Drivers_License: {
 
@@ -33,7 +34,8 @@ const RidesPostedByProvider = sequelize.define('RidesPostedByProvider', {
 
         type: DataTypes.INTEGER,
         allowNull: false
-
+    },RPBP_Status:{
+        type:DataTypes.STRING
     }
 }, {
     timestamps: false,
