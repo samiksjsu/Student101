@@ -2,7 +2,8 @@ const {sequelize, DataTypes} = require('../db/conn')
 
 const RidesRequestedByStudent = sequelize.define('Rides_Requested_By_Student',{
     RRBS_Id:{
-        type:DataTypes.INTEGER
+        type:DataTypes.INTEGER,
+        primaryKey: true
     },
     RRBS_S_Id:{
         type:DataTypes.STRING,
