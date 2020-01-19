@@ -39,8 +39,9 @@ router.post('/StudentLogin',async (req,res)=>{
 // StudentRideRequest
 router.post('/StudentRideRequest',async (req,res)=>{
     try{
+        req.body.RRBS_Status='Pending'
         const rideRequestedByStudent = await RidesRequestedByStudent.create(req.body,{
-            fields:['RRBS_S_Id', 'RRBS_Date', 'RRBS_Time', 'RRBS_Air_Code', 'RRBS_T_Number', 'RRBS_Seats', 'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip']
+            fields:['RRBS_S_Id', 'RRBS_Date', 'RRBS_Time', 'RRBS_Air_Code', 'RRBS_T_Number', 'RRBS_Seats', 'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip','RRBS_Status']
         })
         res.status(201).send(rideRequestedByStudent)
     }catch(e){

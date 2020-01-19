@@ -46,6 +46,9 @@ const RidesRequestedByStudent = sequelize.define('Rides_Requested_By_Student',{
     RRBS_Zip:{
         type:DataTypes.INTEGER,
         allowNull:false
+    },
+    RRBS_Status:{
+        type:DataTypes.STRING
     }
     
 },{

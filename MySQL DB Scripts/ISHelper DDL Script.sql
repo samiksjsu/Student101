@@ -127,6 +127,7 @@ RRBS_Street varchar(50) not null,
 RRBS_City varchar(50) not null,
 RRBS_State varchar(50) not null,
 RRBS_Zip int not null,
+RRBS_Status varchar(20) DEFAULT 'Pending',
 foreign key (RRBS_Air_Code, RRBS_T_Number) references Terminal(T_Air_Code, T_Number),
 foreign key (RRBS_S_Id) references Student(S_Id)
 );
