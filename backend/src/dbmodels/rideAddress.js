@@ -23,3 +23,5 @@ const RideAddress = sequelize.define('Ride_Address',{
     timestamps:false,
     tableName:'Ride_Address'
 })
+
+module.exports = RideAddress

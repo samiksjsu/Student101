@@ -5,12 +5,10 @@ const Ride = sequelize.define('Ride', {
         type: DataTypes.INTEGER
     },
     R_Date: {
-        type: DataTypes.DATE,
-        allowNull: false
+        type: DataTypes.DATE
     },
     R_Time: {
         type: DataTypes.TIME,
-        allowNull: false
     },
     R_Rating: {
         type: DataTypes.FLOAT

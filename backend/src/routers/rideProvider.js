@@ -2,6 +2,7 @@ const RideProvider = require('../dbmodels/rideProvider')
 const RidesPostedByProvider = require('../dbmodels/ridesPostedByProvider')
 const RidesRequestedByStudent = require('../dbmodels/ridesRequestedByStudent')
 const StudentRideAvailed = require('../dbmodels/studentRideAvailed')
+const RideAddress = require('../dbmodels/rideAddress')
 const Ride = require('../dbmodels/ride')
 const express = require('express')
 const bcrypt = require('bcrypt')
@@ -75,18 +76,27 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
             R_Total: capacity
         }
 
-        const ride = await Ride.create(rideObject , {
+        const ride = await Ride.create(rideObject, {
             fields: ['R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code',
                 'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total']
         })
 
         const studentRideAvailed = await StudentRideAvailed.create({
             SRA_S_Id: rideRequestedByStudent.dataValues.RRBS_S_Id,
-            SRA_Ride_Id: ride.dataValues.R_Id, 
+            SRA_Ride_Id: ride.dataValues.id, 
             SRA_Rating: 0.0
         })
 
-        
+        const rideAddress = await RideAddress.create({
+            RA_S_Id: rideRequestedByStudent.dataValues.RRBS_S_Id, 
+            RA_R_Id: ride.dataValues.id, 
+            RA_Street: rideRequestedByStudent.dataValues.RRBS_Street, 
+            RA_City: rideRequestedByStudent.dataValues.RRBS_City, 
+            RA_State: rideRequestedByStudent.dataValues.RRBS_State, 
+            RA_Zip: rideRequestedByStudent.dataValues.RRBS_Zip
+        }, {
+            fields: ['RA_S_Id', 'RA_R_Id', 'RA_Street', 'RA_City', 'RA_State', 'RA_Zip']
+        })
 
         res.status(201).send(ride)
     } catch (e) {
