@@ -1,8 +1,7 @@
-const {sequelize, DataTypes} = require('../db/conn')
+const { sequelize, DataTypes } = require('../db/conn')
 
 const RidesPostedByProvider = sequelize.define('RidesPostedByProvider', {
     RPBP_Id: {
-
         type: DataTypes.INTEGER
 
     }, RPBP_Drivers_License: {

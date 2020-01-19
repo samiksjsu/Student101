@@ -98,7 +98,17 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
             fields: ['RA_S_Id', 'RA_R_Id', 'RA_Street', 'RA_City', 'RA_State', 'RA_Zip']
         })
 
-        res.status(201).send(ride)
+        await RidesRequestedByStudent.update({
+            RRBS_Status: 'Accepted'
+        }, {
+            where: {
+                RRBS_Id
+            }
+        })
+
+        res.status(201).send({
+            Message: 'Ride Accepted Successfully'
+        })
     } catch (e) {
         res.status(400).send(e)
     }
