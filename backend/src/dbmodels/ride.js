@@ -2,8 +2,7 @@ const { sequelize, DataTypes } = require('../db/conn')
 
 const Ride = sequelize.define('Ride', {
     R_Id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true
+        type: DataTypes.INTEGER
     },
     R_Date: {
         type: DataTypes.DATEONLY

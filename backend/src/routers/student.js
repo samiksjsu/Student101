@@ -1,10 +1,12 @@
 const { sequelize, DataTypes, Sequelize } = require('../db/conn')
-
 const express = require('express')
 const bcrypt = require('bcrypt')
+const sendEmail = require('../mail/conn')
+const moment = require('moment')
 
 //models
 const Student = require('../dbmodels/student')
+const RideProvider = require('../dbmodels/rideProvider')
 const RidesRequestedByStudent = require('../dbmodels/ridesRequestedByStudent')
 const Ride = require('../dbmodels/ride')
 const RidesPostedByProvider = require('../dbmodels/ridesPostedByProvider')
@@ -69,7 +71,7 @@ router.post('/BookRideForStudent', async (req, res) => {
             }, transaction
         })
 
-        console.log(ridesPostedByProvider)
+        // console.log(ridesPostedByProvider)
 
         const rideObject = {
             R_Date: ridesPostedByProvider.dataValues.RPBP_Date,
@@ -90,7 +92,7 @@ router.post('/BookRideForStudent', async (req, res) => {
             transaction
         })
 
-        //console.log(ride)
+        // console.log(ride)
 
         const studentRideAvailed = await StudentRideAvailed.create({
             SRA_S_Id: req.body.S_Id,
@@ -127,6 +129,53 @@ router.post('/BookRideForStudent', async (req, res) => {
         })
 
         await transaction.commit()
+
+        const rideProvider = await RideProvider.findByPk(ride.dataValues.R_Accepted_By)
+
+        const student = await Student.findByPk(req.body.S_Id)
+
+        // Construct email objects
+
+        // 1. Email for student
+        // Name, from, to, date, time, rideprovider, rideProvider Email, rideprovider ph number
+
+        const rideProviderEmailObject = {
+            type: 'Ride Provider',
+            rideProviderName: rideProvider.dataValues.P_Name,
+            from: ride.dataValues.R_Starting_Air_Code,
+            to: req.body.Street.toString() + ', ' + req.body.City.toString() + ', ' + req.body.State.toString() + ', ' + req.body.Zip.toString(),
+            date: moment(new Date(ride.dataValues.R_Date)).format('dddd MMMM D Y'),
+            time: moment(new Date(ride.dataValues.R_Date + ',' + ride.dataValues.R_Time)).format('h:mm:ss a'),
+            studentName: student.dataValues.S_Name,
+            studentEmail: student.dataValues.S_Email,
+            studentPhone: student.dataValues.S_Phone,
+            seats: req.body.seats,
+            toEmail: rideProvider.dataValues.P_Email
+        }
+
+        // 2. Email for ride provider
+        // Name, from, to, date, time, student, student Email, student ph number
+
+        const studentEmailObject = {
+            type: 'Student',
+            studentName: student.dataValues.S_Name,
+            from: ride.dataValues.R_Starting_Air_Code,
+            to: req.body.Street.toString() + ', ' + req.body.City.toString() + ', ' + req.body.State.toString() + ', ' + req.body.Zip.toString(),
+            date: moment(new Date(ride.dataValues.R_Date)).format('dddd MMMM D Y'),
+            time: moment(new Date(ride.dataValues.R_Date + ',' + ride.dataValues.R_Time)).format('h:mm:ss a'),
+            seats: req.body.seats,
+            rideProviderName: rideProvider.dataValues.P_Name,
+            rideProviderEmail: rideProvider.dataValues.P_Email,
+            rideProviderPhone: rideProvider.dataValues.P_Phone,
+            toEmail: student.dataValues.S_Email
+        }
+
+        console.log(studentEmailObject)
+        console.log(rideProviderEmailObject)
+
+        await sendEmail(rideProviderEmailObject)
+        await sendEmail(studentEmailObject)
+
         res.status(201).send('Ride Successfully Booked')
     } catch (e) {
         await transaction.rollback()
@@ -157,7 +206,7 @@ router.get('/GetBrandNewRidesPostedByProvider', async (req, res) => {
     }
 })
 
-
+// get already booked rides
 router.get('/GetAlreadyBookedRidesForStudent', async (req, res) => {
     try {
 
@@ -167,7 +216,7 @@ router.get('/GetAlreadyBookedRidesForStudent', async (req, res) => {
             where: {
                 R_Date: req.body.travelDate,
                 R_Starting_Air_Code: req.body.from,
-                R_Total: { 
+                R_Total: {
                     [gte]: sequelize.literal('Ride.R_Current + ' + req.body.seats)
                 }
             }
@@ -180,12 +229,13 @@ router.get('/GetAlreadyBookedRidesForStudent', async (req, res) => {
     }
 })
 
+// book already booked rides
 router.post('/BookAlreadyBookedRidesForStudent', async (req, res) => {
 
     // Steps:
     // Get the ride id which we will be updating (available from request)
-    // Insert the same into student ride availed
-    // Insert into ride addressess
+    // Insert the same into student ride availed and ride address tables
+    // construct email body deatils for ride provider and student separately and send email;
 
     const transaction = await sequelize.transaction()
 
@@ -199,9 +249,11 @@ router.post('/BookAlreadyBookedRidesForStudent', async (req, res) => {
         })
 
         const ride = await Ride.findOne({
+            attributes: ['R_Id', 'R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code', 'R_Starting_Terminal', 'R_Accepted_By',
+                'R_Current', 'R_Total', 'R_Status'],
             where: {
                 R_Id: req.body.R_Id
-            }
+            }, transaction
         })
 
         const studentRideAvailed = await StudentRideAvailed.create({
@@ -225,6 +277,49 @@ router.post('/BookAlreadyBookedRidesForStudent', async (req, res) => {
         })
 
         await transaction.commit()
+
+        const rideProvider = await RideProvider.findByPk(ride.dataValues.R_Accepted_By)
+
+        const student = await Student.findByPk(req.body.S_Id)
+
+        // Construct email objects
+
+        // 1. Email for student
+        // Name, from, to, date, time, rideprovider, rideProvider Email, rideprovider ph number
+
+        const rideProviderEmailObject = {
+            type: 'Ride Provider',
+            rideProviderName: rideProvider.dataValues.P_Name,
+            from: ride.dataValues.R_Starting_Air_Code,
+            to: req.body.Street.toString() + ', ' + req.body.City.toString() + ', ' + req.body.State.toString() + ', ' + req.body.Zip.toString(),
+            date: moment(new Date(ride.dataValues.R_Date)).format('dddd MMMM D Y'),
+            time: moment(new Date(ride.dataValues.R_Date + ',' + ride.dataValues.R_Time)).format('h:mm:ss a'),
+            studentName: student.dataValues.S_Name,
+            studentEmail: student.dataValues.S_Email,
+            studentPhone: student.dataValues.S_Phone,
+            seats: req.body.seats,
+            toEmail: rideProvider.dataValues.P_Email
+        }
+
+        // 2. Email for ride provider
+        // Name, from, to, date, time, student, student Email, student ph number
+
+        const studentEmailObject = {
+            type: 'Student',
+            studentName: student.dataValues.S_Name,
+            from: ride.dataValues.R_Starting_Air_Code,
+            to: req.body.Street.toString() + ', ' + req.body.City.toString() + ', ' + req.body.State.toString() + ', ' + req.body.Zip.toString(),
+            date: moment(new Date(ride.dataValues.R_Date)).format('dddd MMMM D Y'),
+            time: moment(new Date(ride.dataValues.R_Date + ',' + ride.dataValues.R_Time)).format('h:mm:ss a'),
+            seats: req.body.seats,
+            rideProviderName: rideProvider.dataValues.P_Name,
+            rideProviderEmail: rideProvider.dataValues.P_Email,
+            rideProviderPhone: rideProvider.dataValues.P_Phone,
+            toEmail: student.dataValues.S_Email
+        }
+
+        await sendEmail(rideProviderEmailObject)
+        await sendEmail(studentEmailObject)
 
         res.status(201).send('Ride booked successfully')
     } catch (e) {
