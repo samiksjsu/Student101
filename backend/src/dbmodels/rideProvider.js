@@ -17,10 +17,7 @@ const RideProvider = sequelize.define('RideProvider', {
         allowNull: false,
     }, P_Phone: {
         type: DataTypes.BIGINT,
-        allowNull: false,
-        validate: {
-            len: 10
-        }
+        allowNull: false
     }, P_Email: {
         type: DataTypes.STRING,
         unique: true,

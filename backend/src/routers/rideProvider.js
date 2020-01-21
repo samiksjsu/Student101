@@ -1,11 +1,14 @@
+const {sequelize, DataTypes} = require('../db/conn')
 const RideProvider = require('../dbmodels/rideProvider')
 const RidesPostedByProvider = require('../dbmodels/ridesPostedByProvider')
 const RidesRequestedByStudent = require('../dbmodels/ridesRequestedByStudent')
 const StudentRideAvailed = require('../dbmodels/studentRideAvailed')
 const RideAddress = require('../dbmodels/rideAddress')
 const Ride = require('../dbmodels/ride')
+const Student = require('../dbmodels/student')
 const express = require('express')
 const bcrypt = require('bcrypt')
+const sendEmail = require('../mail/conn')
 const router = new express.Router()
 
 
@@ -54,7 +57,9 @@ router.post('/ProviderRidePost', async (req, res) => {
 
 router.post('/StudentRideAcceptedByProvider', async (req, res) => {
 
+    const transaction = await sequelize.transaction()
     try {
+        
         const RRBS_Id = req.body.RRBS_Id
         const P_Drivers_License = req.body.P_Drivers_License
         const capacity = req.body.capacity
@@ -62,7 +67,7 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
         const rideRequestedByStudent = await RidesRequestedByStudent.findOne({
             where: {
                 RRBS_Id
-            }
+            }, transaction
         })
 
         const rideObject = {
@@ -78,13 +83,17 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
 
         const ride = await Ride.create(rideObject, {
             fields: ['R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code',
-                'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total']
+                'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total'],
+            
+            transaction
         })
 
         const studentRideAvailed = await StudentRideAvailed.create({
             SRA_S_Id: rideRequestedByStudent.dataValues.RRBS_S_Id,
             SRA_Ride_Id: ride.dataValues.id, 
             SRA_Rating: 0.0
+        }, {
+            transaction
         })
 
         const rideAddress = await RideAddress.create({
@@ -95,7 +104,8 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
             RA_State: rideRequestedByStudent.dataValues.RRBS_State, 
             RA_Zip: rideRequestedByStudent.dataValues.RRBS_Zip
         }, {
-            fields: ['RA_S_Id', 'RA_R_Id', 'RA_Street', 'RA_City', 'RA_State', 'RA_Zip']
+            fields: ['RA_S_Id', 'RA_R_Id', 'RA_Street', 'RA_City', 'RA_State', 'RA_Zip'],
+            transaction
         })
 
         await RidesRequestedByStudent.update({
@@ -103,14 +113,41 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
         }, {
             where: {
                 RRBS_Id
-            }
+            },
+            transaction
         })
 
+
+        // Get email ids of both parties
+        const student = await Student.findOne({}, {
+            where: {
+                S_Id: rideRequestedByStudent.dataValues.RRBS_S_Id
+            }, transaction
+        })
+
+        const rideProvider = await RideProvider.findOne({
+            where: {
+                P_Drivers_License: P_Drivers_License
+            }, transaction
+        })
+
+        // Construct the email is
+        const mailObject = student.dataValues.S_Email.toString() + ',' + rideProvider.dataValues.P_Email.toString()
+
+        // Send email
+        sendEmail(mailObject)
+
+        // Commit the transactions
+        transaction.commit()
+
+        // Send confirmation
         res.status(201).send({
             Message: 'Ride Accepted Successfully'
         })
     } catch (e) {
-        res.status(400).send(e)
+        transaction.rollback()
+        console.log('Rolling back transaction')
+        res.status(400).send('Transaction failed')
     }
 
 })
