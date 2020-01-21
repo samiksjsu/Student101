@@ -3,7 +3,7 @@ const { sequelize, DataTypes } = require('../db/conn')
 const Ride = sequelize.define('Ride', {
     R_Id: {
         type: DataTypes.INTEGER,
-        
+        primaryKey: true
     },
     R_Date: {
         type: DataTypes.DATEONLY
@@ -28,6 +28,10 @@ const Ride = sequelize.define('Ride', {
     },
     R_Total: {
         type: DataTypes.INTEGER
+    },
+    R_Status: {
+        type: DataTypes.STRING,
+        defaultValue: 'Active'
     }
 }, {
     timestamps: false,

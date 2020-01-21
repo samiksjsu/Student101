@@ -70,6 +70,7 @@ foreign key (R_Starting_Air_Code, R_Starting_Terminal) references Terminal (T_Ai
 R_Accepted_By varchar(10),
 R_Current int,
 R_Total int,
+R_Status varchar(10) default 'Active',
 foreign key (R_Accepted_By) references Ride_Provider(P_Drivers_License)
 );
 

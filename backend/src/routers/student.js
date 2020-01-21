@@ -60,7 +60,7 @@ router.post('/StudentRideRequest', async (req, res) => {
 //Book fresh rides for student
 router.post('/BookRideForStudent', async (req, res) => {
 
-    const transaction = sequelize.transaction()
+    const transaction = await sequelize.transaction()
 
     try {
         const ridesPostedByProvider = await RidesPostedByProvider.findOne({
@@ -117,6 +117,7 @@ router.post('/BookRideForStudent', async (req, res) => {
         //console.log('Data inserted into ride addresses')
 
         await RidesPostedByProvider.update({
+            RPBP_Current: req.body.Seats,
             RPBP_Status: 'Accepted'
         }, {
             where: {
@@ -140,11 +141,11 @@ router.get('/GetBrandNewRidesPostedByProvider', async (req, res) => {
         const ridesPostedByProvider = await RidesPostedByProvider.findAll({
             where: {
                 RPBP_Total: {
-                    [gte]: req.body.Seats
+                    [gte]: req.body.seats
                 },
                 RPBP_Current: 0,
-                RPBP_From: req.body.From,
-                RPBP_Date: req.body.Travel_Date
+                RPBP_From: req.body.from,
+                RPBP_Date: req.body.travelDate
             }
         })
 
@@ -164,10 +165,10 @@ router.get('/GetAlreadyBookedRidesForStudent', async (req, res) => {
         const rides = await Ride.findAll({
             attributes: ['R_Id', 'R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code', 'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total'],
             where: {
-                R_Date: req.body.Travel_Date,
-                R_Starting_Air_Code: req.body.From,
-                R_Total: {
-                    [gte]: sequelize.literal('Ride.R_Current + ' + req.body.Seats)
+                R_Date: req.body.travelDate,
+                R_Starting_Air_Code: req.body.from,
+                R_Total: { 
+                    [gte]: sequelize.literal('Ride.R_Current + ' + req.body.seats)
                 }
             }
         })
@@ -175,6 +176,59 @@ router.get('/GetAlreadyBookedRidesForStudent', async (req, res) => {
         res.send(rides)
 
     } catch (e) {
+        res.status(400).send(e)
+    }
+})
+
+router.post('/BookAlreadyBookedRidesForStudent', async (req, res) => {
+
+    // Steps:
+    // Get the ride id which we will be updating (available from request)
+    // Insert the same into student ride availed
+    // Insert into ride addressess
+
+    const transaction = await sequelize.transaction()
+
+    try {
+        await Ride.update({
+            R_Current: sequelize.literal('Ride.R_Current + ' + req.body.seats)
+        }, {
+            where: {
+                R_Id: req.body.R_Id
+            }, transaction
+        })
+
+        const ride = await Ride.findOne({
+            where: {
+                R_Id: req.body.R_Id
+            }
+        })
+
+        const studentRideAvailed = await StudentRideAvailed.create({
+            SRA_S_Id: req.body.S_Id,
+            SRA_Ride_Id: ride.dataValues.R_Id,
+            SRA_Rating: 0.0
+        }, {
+            transaction
+        })
+
+        const rideAddress = await RideAddress.create({
+            RA_S_Id: req.body.S_Id,
+            RA_R_Id: ride.dataValues.R_Id,
+            RA_Street: req.body.Street,
+            RA_City: req.body.City,
+            RA_State: req.body.State,
+            RA_Zip: req.body.Zip
+        }, {
+            fields: ['RA_S_Id', 'RA_R_Id', 'RA_Street', 'RA_City', 'RA_State', 'RA_Zip'],
+            transaction
+        })
+
+        await transaction.commit()
+
+        res.status(201).send('Ride booked successfully')
+    } catch (e) {
+        await transaction.rollback()
         res.status(400).send(e)
     }
 })

@@ -33,6 +33,7 @@ const RidesPostedByProvider = sequelize.define('RidesPostedByProvider', {
 
         type: DataTypes.INTEGER,
         allowNull: false
+        
     },RPBP_Status:{
         type:DataTypes.STRING
     }

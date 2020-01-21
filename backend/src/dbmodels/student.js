@@ -11,7 +11,7 @@ const Student = sequelize.define('Student',{
         unique: true,
         allowNull: false,
         validate:{
-            len: [10,10]
+            len: 9
         }
     },
     S_Name:{
