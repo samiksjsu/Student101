@@ -2,10 +2,11 @@ const { sequelize, DataTypes } = require('../db/conn')
 
 const Ride = sequelize.define('Ride', {
     R_Id: {
-        type: DataTypes.INTEGER
+        type: DataTypes.INTEGER,
+        
     },
     R_Date: {
-        type: DataTypes.DATE
+        type: DataTypes.DATEONLY
     },
     R_Time: {
         type: DataTypes.TIME,

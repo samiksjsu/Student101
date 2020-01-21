@@ -11,8 +11,7 @@ const RidesPostedByProvider = sequelize.define('RidesPostedByProvider', {
         allowNull: false
 
     }, RPBP_Date: {
-
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
         allowNull: false
 
     }, RPBP_Time: {

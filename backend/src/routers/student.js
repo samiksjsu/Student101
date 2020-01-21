@@ -58,47 +58,60 @@ router.post('/StudentRideRequest', async (req, res) => {
 })
 
 //Book fresh rides for student
-router.post('/BookRideForStudent',async(req,res)=>{
-    try{
-        const ridesPostedByProvider = await RidesPostedByProvider.findOne({RPBP_Id:req.body.RPBP_Id})
+router.post('/BookRideForStudent', async (req, res) => {
 
-        //console.log(ridesPostedByProvider)
+    const transaction = sequelize.transaction()
+
+    try {
+        const ridesPostedByProvider = await RidesPostedByProvider.findOne({
+            where: {
+                RPBP_ID: req.body.RPBP_Id
+            }, transaction
+        })
+
+        console.log(ridesPostedByProvider)
 
         const rideObject = {
             R_Date: ridesPostedByProvider.dataValues.RPBP_Date,
             R_Time: ridesPostedByProvider.dataValues.RPBP_Time,
             R_Rating: 0.0,
             R_Starting_Air_Code: ridesPostedByProvider.dataValues.RPBP_From,
-            R_Starting_Terminal:req.body.Terminal ,
+            R_Starting_Terminal: req.body.Terminal,
             R_Accepted_By: ridesPostedByProvider.dataValues.RPBP_Drivers_License,
             R_Current: req.body.Seats,
             R_Total: ridesPostedByProvider.dataValues.RPBP_Total
         }
 
+        //console.log(rideObject)
+
         const ride = await Ride.create(rideObject, {
             fields: ['R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code',
-                'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total']
+                'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total'],
+            transaction
         })
 
-        //console.log('Data inserted into ride')
+        //console.log(ride)
 
         const studentRideAvailed = await StudentRideAvailed.create({
             SRA_S_Id: req.body.S_Id,
-            SRA_Ride_Id: ride.dataValues.id, 
+            SRA_Ride_Id: ride.dataValues.id,
             SRA_Rating: 0.0
+        }, {
+            transaction
         })
 
         //console.log('data inserted into student ride availed')
 
         const rideAddress = await RideAddress.create({
-            RA_S_Id: req.body.S_Id, 
-            RA_R_Id: ride.dataValues.id, 
-            RA_Street: req.body.Street, 
-            RA_City: req.body.City, 
-            RA_State: req.body.State, 
+            RA_S_Id: req.body.S_Id,
+            RA_R_Id: ride.dataValues.id,
+            RA_Street: req.body.Street,
+            RA_City: req.body.City,
+            RA_State: req.body.State,
             RA_Zip: req.body.Zip
         }, {
-            fields: ['RA_S_Id', 'RA_R_Id', 'RA_Street', 'RA_City', 'RA_State', 'RA_Zip']
+            fields: ['RA_S_Id', 'RA_R_Id', 'RA_Street', 'RA_City', 'RA_State', 'RA_Zip'],
+            transaction
         })
 
         //console.log('Data inserted into ride addresses')
@@ -107,16 +120,62 @@ router.post('/BookRideForStudent',async(req,res)=>{
             RPBP_Status: 'Accepted'
         }, {
             where: {
-                RPBP_ID:req.body.RPBP_Id
-            }
+                RPBP_ID: req.body.RPBP_Id
+            },
+            transaction
         })
 
+        await transaction.commit()
         res.status(201).send('Ride Successfully Booked')
-    }catch(e){
+    } catch (e) {
+        await transaction.rollback()
         res.status(400).send(e)
     }
 })
 
 //get fresh rides
+router.get('/GetBrandNewRidesPostedByProvider', async (req, res) => {
+    try {
+        const { gte, gt, in: opIn } = Sequelize.Op;
+        const ridesPostedByProvider = await RidesPostedByProvider.findAll({
+            where: {
+                RPBP_Total: {
+                    [gte]: req.body.Seats
+                },
+                RPBP_Current: 0,
+                RPBP_From: req.body.From,
+                RPBP_Date: req.body.Travel_Date
+            }
+        })
 
+        //console.log(ridesPostedByProvider)
+        res.send(ridesPostedByProvider)
+
+    } catch (e) {
+        res.status(400).send(e)
+    }
+})
+
+
+router.get('/GetAlreadyBookedRidesForStudent', async (req, res) => {
+    try {
+
+        const { gte, gt, between, in: opIn } = Sequelize.Op;
+        const rides = await Ride.findAll({
+            attributes: ['R_Id', 'R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code', 'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total'],
+            where: {
+                R_Date: req.body.Travel_Date,
+                R_Starting_Air_Code: req.body.From,
+                R_Total: {
+                    [gte]: sequelize.literal('Ride.R_Current + ' + req.body.Seats)
+                }
+            }
+        })
+
+        res.send(rides)
+
+    } catch (e) {
+        res.status(400).send(e)
+    }
+})
 module.exports = router

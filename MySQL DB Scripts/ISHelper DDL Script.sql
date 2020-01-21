@@ -140,6 +140,7 @@ RPBP_Time time not null,
 RPBP_From varchar(4) not null,
 RPBP_Current int default 0,
 RPBP_Total int not null,
+RPBP_Status varchar(20) DEFAULT 'Pending',
 foreign key (RPBP_Drivers_License) references Ride_Provider(P_Drivers_License),
 foreign key (RPBP_From) references Airport(Air_Code)
 );
