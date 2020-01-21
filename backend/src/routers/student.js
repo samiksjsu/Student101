@@ -1,10 +1,11 @@
+// npm libraries
 const { sequelize, DataTypes, Sequelize } = require('../db/conn')
 const express = require('express')
 const bcrypt = require('bcrypt')
 const sendEmail = require('../mail/conn')
 const moment = require('moment')
 
-//models
+// Models
 const Student = require('../dbmodels/student')
 const RideProvider = require('../dbmodels/rideProvider')
 const RidesRequestedByStudent = require('../dbmodels/ridesRequestedByStudent')
@@ -15,7 +16,7 @@ const RideAddress = require('../dbmodels/rideAddress')
 
 const router = new express.Router()
 
-//student sign up
+// Student sign up
 router.post('/StudentSignUp', async (req, res) => {
     try {
         await Student.findUId(req.body.S_University, req)
@@ -29,7 +30,7 @@ router.post('/StudentSignUp', async (req, res) => {
     }
 })
 
-//Login
+// Student Login
 router.post('/StudentLogin', async (req, res) => {
     try {
         console.log(req.body)
@@ -47,19 +48,19 @@ router.post('/StudentLogin', async (req, res) => {
 // StudentRideRequest
 router.post('/StudentRideRequest', async (req, res) => {
     try {
-        req.body.RRBS_Status = 'Pending'
 
-        console.log(req.body)
         const rideRequestedByStudent = await RidesRequestedByStudent.create(req.body, {
-            fields: ['RRBS_S_Id', 'RRBS_Date', 'RRBS_Time', 'RRBS_Air_Code', 'RRBS_T_Number', 'RRBS_Seats', 'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip', 'RRBS_Status']
+            fields: ['RRBS_S_Id', 'RRBS_Date', 'RRBS_Time', 'RRBS_Air_Code', 'RRBS_T_Number', 
+                    'RRBS_Seats', 'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip']
         })
+
         res.status(201).send(rideRequestedByStudent)
     } catch (e) {
         res.status(400).send(e)
     }
 })
 
-//Book fresh rides for student
+// Book fresh rides for student
 router.post('/BookRideForStudent', async (req, res) => {
 
     const transaction = await sequelize.transaction()
@@ -70,8 +71,6 @@ router.post('/BookRideForStudent', async (req, res) => {
                 RPBP_ID: req.body.RPBP_Id
             }, transaction
         })
-
-        // console.log(ridesPostedByProvider)
 
         const rideObject = {
             R_Date: ridesPostedByProvider.dataValues.RPBP_Date,
@@ -84,15 +83,11 @@ router.post('/BookRideForStudent', async (req, res) => {
             R_Total: ridesPostedByProvider.dataValues.RPBP_Total
         }
 
-        //console.log(rideObject)
-
         const ride = await Ride.create(rideObject, {
             fields: ['R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code',
                 'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total'],
             transaction
         })
-
-        // console.log(ride)
 
         const studentRideAvailed = await StudentRideAvailed.create({
             SRA_S_Id: req.body.S_Id,
@@ -101,8 +96,6 @@ router.post('/BookRideForStudent', async (req, res) => {
         }, {
             transaction
         })
-
-        //console.log('data inserted into student ride availed')
 
         const rideAddress = await RideAddress.create({
             RA_S_Id: req.body.S_Id,
@@ -115,8 +108,6 @@ router.post('/BookRideForStudent', async (req, res) => {
             fields: ['RA_S_Id', 'RA_R_Id', 'RA_Street', 'RA_City', 'RA_State', 'RA_Zip'],
             transaction
         })
-
-        //console.log('Data inserted into ride addresses')
 
         await RidesPostedByProvider.update({
             RPBP_Current: req.body.Seats,
@@ -131,14 +122,11 @@ router.post('/BookRideForStudent', async (req, res) => {
         await transaction.commit()
 
         const rideProvider = await RideProvider.findByPk(ride.dataValues.R_Accepted_By)
-
         const student = await Student.findByPk(req.body.S_Id)
 
         // Construct email objects
 
-        // 1. Email for student
-        // Name, from, to, date, time, rideprovider, rideProvider Email, rideprovider ph number
-
+        // 1. Email for ride provider
         const rideProviderEmailObject = {
             type: 'Ride Provider',
             rideProviderName: rideProvider.dataValues.P_Name,
@@ -152,10 +140,8 @@ router.post('/BookRideForStudent', async (req, res) => {
             seats: req.body.seats,
             toEmail: rideProvider.dataValues.P_Email
         }
-
-        // 2. Email for ride provider
-        // Name, from, to, date, time, student, student Email, student ph number
-
+   
+        // 2. Email for Student
         const studentEmailObject = {
             type: 'Student',
             studentName: student.dataValues.S_Name,
@@ -183,7 +169,7 @@ router.post('/BookRideForStudent', async (req, res) => {
     }
 })
 
-//get fresh rides
+// Get fresh rides
 router.get('/GetBrandNewRidesPostedByProvider', async (req, res) => {
     try {
         const { gte, gt, in: opIn } = Sequelize.Op;
@@ -206,7 +192,7 @@ router.get('/GetBrandNewRidesPostedByProvider', async (req, res) => {
     }
 })
 
-// get already booked rides
+// Get already booked rides
 router.get('/GetAlreadyBookedRidesForStudent', async (req, res) => {
     try {
 
@@ -229,7 +215,7 @@ router.get('/GetAlreadyBookedRidesForStudent', async (req, res) => {
     }
 })
 
-// book already booked rides
+// Book already booked rides
 router.post('/BookAlreadyBookedRidesForStudent', async (req, res) => {
 
     // Steps:
@@ -327,4 +313,5 @@ router.post('/BookAlreadyBookedRidesForStudent', async (req, res) => {
         res.status(400).send(e)
     }
 })
+
 module.exports = router
