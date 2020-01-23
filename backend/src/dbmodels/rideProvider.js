@@ -77,7 +77,7 @@ RideProvider.findByCredentials = async (req) => {
     }
     
     // Once there is a match, generate jwt and embed in the request
-    const token = jwt.sign({_id: req.body.email.toString()}, 'student')
+    const token = jwt.sign({_id: req.body.email.toString()}, 'rideProviderToken')
     req.token = token
 
     await RideProviderTokens.create({

@@ -20,8 +20,10 @@
     "mysql2": "^2.1.0",
     "nexmo": "^2.6.0",
     "nodemailer": "^6.4.2",
+    "request": "^2.88.0",
     "sequelize": "^5.21.3",
     "tedious": "^8.0.1",
+    "telnyx": "^1.6.0",
     "validator": "^12.1.0"
   },
   "devDependencies": {

@@ -85,7 +85,11 @@ foreign key (N_A_Code) references Airport(Air_Code)
 create table Student_Ride_Availed (
 SRA_S_Id varchar(10),
 SRA_Ride_Id int,
+SRA_Seats int,
 SRA_Rating float,
+SRA_RRBS_Id int, 
+SRA_RPBP_Id int, 
+SRA_Status varchar(10) default 'Active',
 primary key (SRA_S_Id, SRA_Ride_Id),
 foreign key (SRA_S_Id) references Student(S_Id),
 foreign key (SRA_Ride_Id) references Ride(R_Id)
@@ -155,3 +159,18 @@ create table Ride_Provider_Tokens (
 RPT_P_Email varchar (500),
 RPT_Token varchar (5000)
 );
+
+create table ride_provider_ride_provided(
+RPRP_Id int auto_increment primary key,
+RPRP_P_Drivers_License varchar(10),
+RPRP_R_Id int,
+RPRP_S_Id varchar(10),
+RPRP_RPBP_Id int,
+RPRP_RRBS_Id int,
+RPRP_Status varchar(10) default 'Active',
+foreign key (RPRP_P_Drivers_License) references ride_provider(P_Drivers_License),
+foreign key (RPRP_R_Id) references ride(R_Id),
+foreign key (RPRP_S_Id) references student(S_Id),
+foreign key (RPRP_RPBP_Id) references rides_posted_by_provider(RPBP_Id),
+foreign key (RPRP_RRBS_Id) references rides_requested_by_student(RRBS_Id)
+)

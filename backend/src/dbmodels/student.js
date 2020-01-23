@@ -1,102 +1,102 @@
-const {sequelize, DataTypes} = require('../db/conn')
+const { sequelize, DataTypes } = require('../db/conn')
 const University = require('./university')
 const bcrypt = require('bcrypt')
 var jwt = require('jsonwebtoken')
 const Student_Tokens = require('./studentTokens')
 
-const Student = sequelize.define('Student',{
-    S_Id:{
-        type:DataTypes.STRING,
+const Student = sequelize.define('Student', {
+    S_Id: {
+        type: DataTypes.STRING,
         primaryKey: true,
-        unique: true,
         allowNull: false,
-        validate:{
+        validate: {
             len: 9
         }
     },
-    S_Name:{
-        type:DataTypes.STRING,
+    S_Name: {
+        type: DataTypes.STRING,
         allowNull: false
     },
-    S_Email:{
-        type:DataTypes.STRING,
+    S_Email: {
+        type: DataTypes.STRING,
         unique: true,
         allowNull: false,
-        validate:{
-            isEmail:true
+        validate: {
+            isEmail: true
         }
     },
-    S_Password:{
-        type:DataTypes.STRING,
+    S_Password: {
+        type: DataTypes.STRING,
         allowNull: false
-        
-    },S_Phone:{
+
+    }, S_Phone: {
         type: DataTypes.BIGINT,
         allowNull: false,
         unique: true,
-        validate:{
-            len: [10,10]
+        validate: {
+            len: 10
         }
     },
-    S_University:{
+    S_University: {
         type: DataTypes.INTEGER,
         allowNull: false
     }
-},{
+}, {
     tableName: 'Student',
     timestamps: false
 })
 
 //class function
 
-Student.findByCredentials = async (req)=>{
+Student.findByCredentials = async (req) => {
     const student = await Student.findOne({
-        where:{
-            S_Email:req.body.S_Email
+        where: {
+            S_Email: req.body.S_Email
         }
     })
 
-    if(!student){
+    if (!student) {
         const error = new Error()
-        error.message='Unable to login.No user with email is present'
-        error.description='Not Valid Login'
-        throw error
-    }
-    
-    const isMatch = await bcrypt.compare(req.body.S_Password,student.dataValues.S_Password)
-    if(!isMatch){
-        const error = new Error()
-        error.message='User id and password does not match'
-        error.description='Not Valid Login'
+        error.message = 'Unable to login.No user with email is present'
+        error.description = 'Not Valid Login'
         throw error
     }
 
-    const token = jwt.sign({_id:req.body.S_Email},'thisismynewcourse')
+    const isMatch = await bcrypt.compare(req.body.S_Password, student.dataValues.S_Password)
+
+    if (!isMatch) {
+        const error = new Error()
+        error.message = 'User id and password does not match'
+        error.description = 'Not Valid Login'
+        throw error
+    }
+
+    const token = jwt.sign({ _id: req.body.S_Email }, 'studentToken')
     req.token = token
-    const student_tokens = await Student_Tokens.create({ST_S_Email:req.body.S_Email,ST_Token:token})
+    const student_tokens = await Student_Tokens.create({ ST_S_Email: req.body.S_Email, ST_Token: token })
     return student
 
 }
 
-Student.findUId = async function(U_Name,req){
+Student.findUId = async function (U_Name, req) {
 
     const university = await University.findOne({
         where: {
-            U_Name:U_Name
+            U_Name: U_Name
         }
     })
-    
-    if(!university){
+
+    if (!university) {
         const error = new Error()
         error.error = 'No university found'
         error.description = 'Invalid University Name'
         error.message = 'Invalid University Name'
         throw error
     }
-    
+
     const U_Id = JSON.parse(JSON.stringify(university)).U_Id
-    req.body.S_University=U_Id
-    
+    req.body.S_University = U_Id
+
 }
 
 //instance function

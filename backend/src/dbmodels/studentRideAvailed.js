@@ -9,6 +9,14 @@ const StudentRideAvailed = sequelize.define('StudentRideAvailed', {
         primaryKey: true
     }, SRA_Rating: {
         type: DataTypes.FLOAT
+    }, SRA_RRBS_Id: {
+        type: DataTypes.INTEGER
+    }, SRA_RPBP_Id: {
+        type: DataTypes.INTEGER
+    }, SRA_Seats: {
+        type: DataTypes.INTEGER
+    }, SRA_Status: {
+        type: DataTypes.STRING
     }
 }, {
     timestamps: false,
