@@ -20,3 +20,6 @@ __e.__ Sorting rides based on dates, seats and rating.<br>
 __f.__ Filtering based on dates.<br>
 __g.__ Aparment search appearing on google maps.<br>
 __h.__ Locate me feature, as well as location dropdows while booking rides.<br>
+__i.__ Add comments for cancellations
+__j.__ 1 view ride details on dashboard which will shows the complete path on google maps
+__k.__ Add pricing section if any provider wants to charge
