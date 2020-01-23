@@ -6,6 +6,7 @@ const StudentRideAvailed = require('../dbmodels/studentRideAvailed')
 const RideAddress = require('../dbmodels/rideAddress')
 const Ride = require('../dbmodels/ride')
 const Student = require('../dbmodels/student')
+const RideProviderRideProvided = require('../dbmodels/rideProviderRideProvided')
 const express = require('express')
 const bcrypt = require('bcrypt')
 const sendEmail = require('../mail/conn')
@@ -152,5 +153,61 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
 
 })
 
+//cancel whole ride by ride provider
+router.post('/CancelRideByProvider',async(req,res)=>{
+    const transaction = sequelize.transaction()
+    try{
+        const R_Id = req.body.R_Id
+        const P_Drivers_License = req.body.P_Drivers_License
+        const { ne } = Sequelize.Op
+
+        await StudentRideAvailed.update({
+            SRA_Status: 'Cancelled'
+        }, {
+            where: {
+                SRA_Ride_Id: R_Id
+            }, transaction
+        })
+
+        await Ride.update({
+            R_Status:'Cancelled'
+        },{
+            where:{
+                R_Id:R_Id
+            },transaction
+        })
+
+        await RideProviderRideProvided.update({
+            RPRP_Status:'Cancelled'
+        },{
+            where:{
+                RPRP_R_Id:R_Id
+            },transaction
+        })
+
+        const rideProviderRideProvided = await RideProviderRideProvided.findOne({
+            where:{
+                RPRP_R_Id:R_Id,
+                RPRP_RRBS_Id:{
+                    [ne]:null
+                }
+            }
+        },transaction)
+
+        if(rideProviderRideProvided.dataValues.RPRP_RRBS_Id){
+            await RidesRequestedByStudent.update({
+                RRBS_Status:'Pending'
+            },{
+                where:{
+                RRBS_Id:rideProviderRideProvided.dataValues.RPRP_RRBS_Id
+            },transaction
+            })
+        }
+
+
+    }catch(e){
+        res.status(400).send(e)
+    }
+})
 
 module.exports = router
