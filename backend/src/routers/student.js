@@ -253,15 +253,22 @@ router.post('/BookAlreadyBookedRidesForStudent', async (req, res) => {
         })
 
         const rideProviderRideProvided = await RideProviderRideProvided.findOne({
-            attributes: ['RPRP_Id', 'RPRP_P_Drivers_License', 'RPRP_R_Id', 'RPRP_S_Id', 
-                        'RPRP_RPBP_Id', 'RPRP_RRBS_Id', 'RPRP_Status'],
+            attributes: ['RPRP_Id', 'RPRP_P_Drivers_License', 'RPRP_R_Id', 'RPRP_S_Id',
+                'RPRP_RPBP_Id', 'RPRP_RRBS_Id', 'RPRP_Status'],
             where: {
                 RPRP_R_Id: req.body.R_Id
             }, transaction
         })
-        
+
+        console.log({
+            RPRP_P_Drivers_License: rideProviderRideProvided.dataValues.RPRP_P_Drivers_License,
+            RPRP_R_Id: rideProviderRideProvided.dataValues.RPRP_R_Id,
+            RPRP_S_Id: req.body.S_Id,
+            RPRP_RPBP_Id: rideProviderRideProvided.dataValues.RPRP_RPBP_Id
+        })
+
         await RideProviderRideProvided.create({
-            RPRP_P_Drivers_License: rideProviderRideProvided.dataValues.RPRP_Drivers_License,
+            RPRP_P_Drivers_License: rideProviderRideProvided.dataValues.RPRP_P_Drivers_License,
             RPRP_R_Id: rideProviderRideProvided.dataValues.RPRP_R_Id,
             RPRP_S_Id: req.body.S_Id,
             RPRP_RPBP_Id: rideProviderRideProvided.dataValues.RPRP_RPBP_Id
@@ -290,16 +297,6 @@ router.post('/BookAlreadyBookedRidesForStudent', async (req, res) => {
             RA_Zip: req.body.Zip
         }, {
             fields: ['RA_S_Id', 'RA_R_Id', 'RA_Street', 'RA_City', 'RA_State', 'RA_Zip'],
-            transaction
-        })
-
-        await RideProviderRideProvided.create({
-            RPRP_P_Drivers_License: ride.dataValues.R_Accepted_By,
-            RPRP_R_Id: req.body.R_Id,
-            RPRP_S_Id: req.body.S_Id,
-            RPRP_RPBP_Id: rideProviderRideProvided.dataValues.RPRP_Id
-        }, {
-            fields: ['RPRP_P_Drivers_License', 'RPRP_R_Id', 'RPRP_S_Id', 'RPRP_RPBP_Id'],
             transaction
         })
 
@@ -359,11 +356,11 @@ router.post('/BookAlreadyBookedRidesForStudent', async (req, res) => {
 router.get('/GetUpcomingRidesForStudent', async (req, res) => {
     try {
 
-        const upcomingRides = await sequelize.query("select R_Id, R_Date, R_Time, R_Starting_Air_Code," + 
-        "R_Starting_Terminal, P_Name from ride r join student_ride_availed sra on r.R_Id = sra.SRA_Ride_Id " +
-        "join ride_provider rp on rp.P_Drivers_License = r.R_Accepted_By " +
-        "where sra.SRA_S_Id = " + req.body.SRA_S_Id + " and R_Date > '" + 
-        (new Date().getFullYear() + '-' + new Date().getMonth() + 1 + '-' + new Date().getDate()) + "'")
+        const upcomingRides = await sequelize.query("select R_Id, R_Date, R_Time, R_Starting_Air_Code," +
+            "R_Starting_Terminal, P_Name from ride r join student_ride_availed sra on r.R_Id = sra.SRA_Ride_Id " +
+            "join ride_provider rp on rp.P_Drivers_License = r.R_Accepted_By " +
+            "where sra.SRA_S_Id = " + req.body.SRA_S_Id + " and R_Date > '" +
+            (new Date().getFullYear() + '-' + new Date().getMonth() + 1 + '-' + new Date().getDate()) + "'")
 
         res.send(upcomingRides[0])
 
@@ -381,17 +378,17 @@ router.get('/GetRequestedRidesForStudent', async (req, res) => {
     try {
         const { gte } = Sequelize.Op
         requestedRides = await StudentRideAvailed.findAll({
-            attributes: ['RRBS_Id', 'RRBS_Date', 'RRBS_Time', 
-                         'RRBS_Air_Code', 'RRBS_T_Number', 'RRBS_Seats', 
-                         'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip', 
-                         'RRBS_Status'],
+            attributes: ['RRBS_Id', 'RRBS_Date', 'RRBS_Time',
+                'RRBS_Air_Code', 'RRBS_T_Number', 'RRBS_Seats',
+                'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip',
+                'RRBS_Status'],
             where: {
                 RRBS_S_Id: req.S_Id,
                 RRBS_Status: 'Pending',
                 RRBS_Date: {
-                    [gte] :Sequelize.literal((new Date().getFullYear() + '-' + 
-                                              new Date().getMonth() + 1 + '-' + 
-                                              new Date().getDate()))
+                    [gte]: Sequelize.literal((new Date().getFullYear() + '-' +
+                        new Date().getMonth() + 1 + '-' +
+                        new Date().getDate()))
                 }
             }
         })
@@ -437,8 +434,8 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
         })
 
         const ride = await Ride.findOne({
-            attributes: ['R_Id', 'R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code', 
-                        'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total', 'R_Status'],
+            attributes: ['R_Id', 'R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code',
+                'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total', 'R_Status'],
             where: {
                 R_Id: req.body.R_Id
             }, transaction
@@ -455,7 +452,7 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
             transaction
         })
 
-        
+
         await RideProviderRideProvided.update({
             RPRP_Status: 'Cancelled'
         }, {
@@ -467,8 +464,8 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
 
         if (studentRideAvailed.dataValues.SRA_RRBS_Id) {
             const rideRequestedByStudent = RidesRequestedByStudent.findOne({
-                attributes: ['RRBS_Id', 'RRBS_S_Id', 'RRBS_Date', 'RRBS_Time', 'RRBS_Air_Code', 'RRBS_T_Number', 
-                            'RRBS_Seats', 'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip', 'RRBS_Status'],
+                attributes: ['RRBS_Id', 'RRBS_S_Id', 'RRBS_Date', 'RRBS_Time', 'RRBS_Air_Code', 'RRBS_T_Number',
+                    'RRBS_Seats', 'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip', 'RRBS_Status'],
                 where: {
                     RRBS_Id: studentRideAvailed.dataValues.SRA_RRBS_Id
                 }
@@ -493,13 +490,13 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
             })
 
             if (studentRideAvailed.dataValues.SRA_RPBP_Id) {
-                
+
                 const rideProviderRideProvided = await RideProviderRideProvided.findOne({
                     where: {
                         RPRP_R_Id: req.body.R_Id
                     }, transaction
                 })
-    
+
                 await RidesPostedByProvider.update({
                     RPBP_Status: 'Pending'
                 }, {
@@ -507,7 +504,7 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
                         RPBP_Id: studentRideAvailed.dataValues.SRA_RPBP_Id
                     }, transaction
                 })
-            } 
+            }
         }
 
         await transaction.commit()
@@ -515,6 +512,87 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
         res.status(201).send()
 
     } catch (e) {
+        await transaction.rollback()
+        res.status(400).send()
+    }
+})
+
+// Get All the completed rides by Student
+router.get('/GetCompletedRidesByStudent', async (req, res) => {
+    try {
+        const completedRides = await sequelize.query("select * from student_ride_availed S join ride_address R on SRA_S_Id = RA_S_Id where SRA_Status = 'Completed' and SRA_S_Id = " + req.body.S_Id)
+        res.send(completedRides[0])
+    } catch (e) {
+        await transaction.rollback()
+        res.status(400).send(e)
+    }
+})
+
+router.post('/RateProvider', async (req, res) => {
+    const transaction = await sequelize.transaction()
+    try{
+        const R_Id = req.body.R_Id
+        const S_Id = req.body.S_Id
+        const Rating = req.body.Rating
+
+        await RideProviderRideProvided.update({
+            RPRP_Rating:Rating
+        },{
+            where:{
+                RPRP_R_Id:R_Id,
+                RPRP_S_Id:S_Id
+            },transaction
+        })
+
+        const {ne} = Sequelize.Op 
+        const avgData = await RideProviderRideProvided.findAll({
+            attributes:[[sequelize.fn('sum',sequelize.col('RPRP_Rating')),'sum'], [sequelize.fn('count',sequelize.col('RPRP_Rating')),'count'],'RPRP_P_Drivers_License'],
+            group:['RPRP_R_Id','RPRP_P_Drivers_License'],
+            raw:true,
+            where:{
+                RPRP_Rating:{
+                    [ne]:0
+                }
+            },
+            transaction
+        })
+        const avg = parseInt(avgData[0].sum)/parseInt(avgData[0].count)
+        const pDriversLicense=avgData[0].RPRP_P_Drivers_License
+        
+
+        await Ride.update({
+            R_Rating:avg
+        },{
+            where:{
+                R_Id:R_Id
+            },transaction
+        })
+
+        const rideProvider = await RideProvider.findOne({
+            where:{
+                P_Drivers_License:pDriversLicense
+            },transaction
+        })
+        
+        
+        const newRideProviderRating=((rideProvider.dataValues.P_Rating * rideProvider.dataValues.P_No_Rating) + parseInt(Rating))/(rideProvider.dataValues.P_No_Rating+1)
+        console.log(newRideProviderRating)
+
+        await RideProvider.update({
+            P_Rating:newRideProviderRating,
+            P_No_Rating:sequelize.literal('P_No_Rating +1')
+        },{
+            where:{
+                P_Drivers_License:pDriversLicense
+            },transaction
+        })
+
+        //await transaction.rollback()
+        await transaction.commit()
+        res.send('Rating Added Successfully')
+
+    }catch(e){
+        await transaction.rollback()
         res.status(400).send()
     }
 })
