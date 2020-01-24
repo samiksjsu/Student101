@@ -260,13 +260,6 @@ router.post('/BookAlreadyBookedRidesForStudent', async (req, res) => {
             }, transaction
         })
 
-        console.log({
-            RPRP_P_Drivers_License: rideProviderRideProvided.dataValues.RPRP_P_Drivers_License,
-            RPRP_R_Id: rideProviderRideProvided.dataValues.RPRP_R_Id,
-            RPRP_S_Id: req.body.S_Id,
-            RPRP_RPBP_Id: rideProviderRideProvided.dataValues.RPRP_RPBP_Id
-        })
-
         await RideProviderRideProvided.create({
             RPRP_P_Drivers_License: rideProviderRideProvided.dataValues.RPRP_P_Drivers_License,
             RPRP_R_Id: rideProviderRideProvided.dataValues.RPRP_R_Id,
