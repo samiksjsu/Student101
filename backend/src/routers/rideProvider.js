@@ -1,4 +1,4 @@
-const {sequelize, DataTypes} = require('../db/conn')
+const { sequelize, DataTypes } = require('../db/conn')
 const RideProvider = require('../dbmodels/rideProvider')
 const RidesPostedByProvider = require('../dbmodels/ridesPostedByProvider')
 const RidesRequestedByStudent = require('../dbmodels/ridesRequestedByStudent')
@@ -60,7 +60,7 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
 
     const transaction = await sequelize.transaction()
     try {
-        
+
         const RRBS_Id = req.body.RRBS_Id
         const P_Drivers_License = req.body.P_Drivers_License
         const capacity = req.body.capacity
@@ -85,24 +85,24 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
         const ride = await Ride.create(rideObject, {
             fields: ['R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code',
                 'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total'],
-            
+
             transaction
         })
 
         const studentRideAvailed = await StudentRideAvailed.create({
             SRA_S_Id: rideRequestedByStudent.dataValues.RRBS_S_Id,
-            SRA_Ride_Id: ride.dataValues.id, 
+            SRA_Ride_Id: ride.dataValues.id,
             SRA_Rating: 0.0
         }, {
             transaction
         })
 
         const rideAddress = await RideAddress.create({
-            RA_S_Id: rideRequestedByStudent.dataValues.RRBS_S_Id, 
-            RA_R_Id: ride.dataValues.id, 
-            RA_Street: rideRequestedByStudent.dataValues.RRBS_Street, 
-            RA_City: rideRequestedByStudent.dataValues.RRBS_City, 
-            RA_State: rideRequestedByStudent.dataValues.RRBS_State, 
+            RA_S_Id: rideRequestedByStudent.dataValues.RRBS_S_Id,
+            RA_R_Id: ride.dataValues.id,
+            RA_Street: rideRequestedByStudent.dataValues.RRBS_Street,
+            RA_City: rideRequestedByStudent.dataValues.RRBS_City,
+            RA_State: rideRequestedByStudent.dataValues.RRBS_State,
             RA_Zip: rideRequestedByStudent.dataValues.RRBS_Zip
         }, {
             fields: ['RA_S_Id', 'RA_R_Id', 'RA_Street', 'RA_City', 'RA_State', 'RA_Zip'],
@@ -154,9 +154,9 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
 })
 
 //cancel whole ride by ride provider
-router.post('/CancelRideByProvider',async(req,res)=>{
+router.post('/CancelRideByProvider', async (req, res) => {
     const transaction = sequelize.transaction()
-    try{
+    try {
         const R_Id = req.body.R_Id
         const P_Drivers_License = req.body.P_Drivers_License
         const { ne } = Sequelize.Op
@@ -170,7 +170,64 @@ router.post('/CancelRideByProvider',async(req,res)=>{
         })
 
         await Ride.update({
-            R_Status:'Cancelled'
+            R_Status: 'Cancelled'
+        }, {
+            where: {
+                R_Id: R_Id
+            }, transaction
+        })
+
+        await RideProviderRideProvided.update({
+            RPRP_Status: 'Cancelled'
+        }, {
+            where: {
+                RPRP_R_Id: R_Id
+            }, transaction
+        })
+
+        const rideProviderRideProvided = await RideProviderRideProvided.findOne({
+            where: {
+                RPRP_R_Id: R_Id,
+                RPRP_RRBS_Id: {
+                    [ne]: null
+                }
+            }
+        }, transaction)
+
+        if (rideProviderRideProvided.dataValues.RPRP_RRBS_Id) {
+            await RidesRequestedByStudent.update({
+                RRBS_Status: 'Pending'
+            }, {
+                where: {
+                    RRBS_Id: rideProviderRideProvided.dataValues.RPRP_RRBS_Id
+                }, transaction
+            })
+        }
+        await transaction.commit()
+        res.status(201).send()
+
+    } catch (e) {
+        res.status(400).send(e)
+    }
+})
+
+
+//mark ride as completed
+router.post('/MarkRideAsCompleted', async (req, res) => {
+    const transaction = await sequelize.transaction()
+    try {
+        const R_Id = req.body.R_Id
+
+        await StudentRideAvailed.update({
+            SRA_Status: 'Completed'
+        }, {
+            where: {
+                SRA_Ride_Id: R_Id
+            }, transaction
+        })
+
+        await Ride.update({
+            R_Status:'Completed'
         },{
             where:{
                 R_Id:R_Id
@@ -178,36 +235,44 @@ router.post('/CancelRideByProvider',async(req,res)=>{
         })
 
         await RideProviderRideProvided.update({
-            RPRP_Status:'Cancelled'
+            RPRP_Status:'Completed'
         },{
             where:{
                 RPRP_R_Id:R_Id
             },transaction
         })
 
-        const rideProviderRideProvided = await RideProviderRideProvided.findOne({
-            where:{
-                RPRP_R_Id:R_Id,
-                RPRP_RRBS_Id:{
-                    [ne]:null
-                }
-            }
-        },transaction)
-
-        if(rideProviderRideProvided.dataValues.RPRP_RRBS_Id){
-            await RidesRequestedByStudent.update({
-                RRBS_Status:'Pending'
-            },{
-                where:{
-                RRBS_Id:rideProviderRideProvided.dataValues.RPRP_RRBS_Id
-            },transaction
-            })
-        }
+        await transaction.commit()
 
 
-    }catch(e){
+        const ride = await Ride.findOne({
+            where: {
+                R_Id: R_Id
+            },
+            attributes: ['R_Id', 'R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code', 'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total', 'R_Status']
+        })
+        const rideProvider = await RideProvider.findByPk(ride.dataValues.R_Accepted_By)
+        const studentRideAvailed = await StudentRideAvailed.findAll({ SRA_Ride_Id: R_Id })
+        const students = await sequelize.query('select S_Id, S_Name, S_Email, S_Phone from Student inner join Student_Ride_Availed on S_Id = SRA_S_Id ' + 
+            'and SRA_Ride_Id = ' + R_Id)
+        
+        var emails = ''
+        //console.log(students)
+        students[0].forEach(element => {
+            emails+=element.S_Email + ','
+        });
+        var emails = emails.slice(0, -1);
+
+        //send email; after this
+
+        
+        res.status(201).send(students)
+
+    } catch (e) {
         res.status(400).send(e)
     }
 })
+
+
 
 module.exports = router

@@ -1,4 +1,4 @@
-const {sequelize, DataTypes} = require('../db/conn')
+const { sequelize, DataTypes } = require('../db/conn')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const University = require('./university')
@@ -28,6 +28,10 @@ const RideProvider = sequelize.define('RideProvider', {
     }, P_University: {
         type: DataTypes.INTEGER,
         allowNull: false
+    }, P_Rating: {
+        type: DataTypes.FLOAT
+    }, P_No_Rating: {
+        type: DataTypes.FLOAT
     }
 }, {
     tableName: 'Ride_Provider',
@@ -37,10 +41,10 @@ const RideProvider = sequelize.define('RideProvider', {
 RideProvider.findUId = async function (U_Name, req) {
 
     const university = await University.findOne({
-        where: {U_Name}
+        where: { U_Name }
     })
 
-    if(!university) {
+    if (!university) {
         const error = new Error()
         error.error = 'No university found'
         error.description = 'Invalid university name'
@@ -61,7 +65,7 @@ RideProvider.findByCredentials = async (req) => {
         }
     })
 
-    if(!rideProvider) {
+    if (!rideProvider) {
         const error = new Error();
         error.error = 'Invalid Credentials'
         error.description = 'Invalid Credentials'
@@ -69,15 +73,15 @@ RideProvider.findByCredentials = async (req) => {
     }
     const isMatch = await bcrypt.compare(req.body.password, rideProvider.dataValues.P_Password)
 
-    if(!isMatch) {
+    if (!isMatch) {
         const error = new Error();
         error.error = 'Invalid Credentials'
         error.description = 'Invalid Credentials'
         throw error
     }
-    
+
     // Once there is a match, generate jwt and embed in the request
-    const token = jwt.sign({_id: req.body.email.toString()}, 'rideProviderToken')
+    const token = jwt.sign({ _id: req.body.email.toString() }, 'rideProviderToken')
     req.token = token
 
     await RideProviderTokens.create({

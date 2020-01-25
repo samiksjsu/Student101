@@ -11,7 +11,6 @@ async function getEmails(arr) {
                 S_Id: id
             }
         })
-
         emails += temp.dataValues.S_Email + ','
     }
     return emails
