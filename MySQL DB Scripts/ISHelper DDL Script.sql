@@ -14,6 +14,8 @@ S_Email varchar (500) not null,
 S_Password varchar(5000) not null,
 S_Phone BigInt not null unique,
 S_University int not null,
+S_Rating float default 0,
+S_Rated_By int default 0,
 foreign key (S_University) references University(U_Id)
 );
 
@@ -24,6 +26,8 @@ P_Name varchar (50) not null,
 P_Phone BigInt not null unique,
 P_Email varchar (500) unique not null,
 P_University int not null,
+P_Rating float default 0,
+P_No_Rating int default 0,
 foreign key (P_University) references University(U_Id)
 );
 
@@ -168,6 +172,7 @@ RPRP_S_Id varchar(10),
 RPRP_RPBP_Id int,
 RPRP_RRBS_Id int,
 RPRP_Status varchar(10) default 'Active',
+RPRP_Rating float default 0,
 foreign key (RPRP_P_Drivers_License) references ride_provider(P_Drivers_License),
 foreign key (RPRP_R_Id) references ride(R_Id),
 foreign key (RPRP_S_Id) references student(S_Id),
