@@ -90,6 +90,7 @@ SRA_Rating float,
 SRA_RRBS_Id int, 
 SRA_RPBP_Id int, 
 SRA_Status varchar(10) default 'Active',
+SRA_Comments varchar (1000),
 primary key (SRA_S_Id, SRA_Ride_Id),
 foreign key (SRA_S_Id) references Student(S_Id),
 foreign key (SRA_Ride_Id) references Ride(R_Id)

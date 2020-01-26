@@ -362,7 +362,7 @@ router.get('/GetUpcomingRidesForStudent', async (req, res) => {
     }
 })
 
-// Get Requessted Rides
+// Get Requested Rides
 router.get('/GetRequestedRidesForStudent', async (req, res) => {
 
     // Get the student id from req
@@ -396,11 +396,25 @@ router.get('/GetRequestedRidesForStudent', async (req, res) => {
 // Cancel ride booked by student
 router.post('/CancelRideBookedByStudent', async (req, res) => {
 
-    const transaction = sequelize.transaction()
+    const transaction = await sequelize.transaction()
     try {
         const R_Id = req.body.R_Id
         const S_Id = req.body.S_Id
+        const SRA_Comments = req.body.Comments
 
+        /*
+        Steps:
+        ------
+
+        1. Mark the ride as cancelled in student_ride_availed
+        2. Redeuce the same number of seats from ride table for this ride number. Ride number is avilable from SRA_R_Id
+        3. Since ride is now cancelled, we need to delete the same address from ride_address table
+        4. Ride provider should also know about the cancellation, hence mark the ride cancelled at ride_provider_ride_provided
+        5. 2 conditions: 
+            a. If this was a student request that was approved, mark the request as pending
+            b. If the current seats has become 0 in the ride table and it was initially , mark the reqest in the ride_posted_by_provider as pending
+               and mark the ride as cancelled.
+        */
         await StudentRideAvailed.update({
             SRA_Status: 'Cancelled'
         }, {
@@ -463,8 +477,20 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
                     RRBS_Id: studentRideAvailed.dataValues.SRA_RRBS_Id
                 }
             })
+            
 
-            await RidesPostedByProvider.update({
+            // Verify this change
+            // ---------------------
+
+            // await RidesPostedByProvider.update({
+            //     RRBS_Status: 'Pending'
+            // }, {
+            //     where: {
+            //         RRBS_Id: rideRequestedByStudent.dataValues.RRBS_Id
+            //     }
+            // })
+
+            await RidesRequestedByStudent.update({
                 RRBS_Status: 'Pending'
             }, {
                 where: {
@@ -482,11 +508,18 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
                 }, transaction
             })
 
+            // Find out the reason behind this
             if (studentRideAvailed.dataValues.SRA_RPBP_Id) {
-
+                
+                // Changed from only Ride_id to 2 conditons. Check the != condition below. Check whiteboard to get reason
+                // for the change
+                const { ne } = Sequelize.Op
                 const rideProviderRideProvided = await RideProviderRideProvided.findOne({
                     where: {
-                        RPRP_R_Id: req.body.R_Id
+                        RPRP_R_Id: req.body.R_Id,
+                        RPRP_RPBP_Id: {
+                            [ne]: null
+                        }
                     }, transaction
                 })
 
@@ -494,7 +527,7 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
                     RPBP_Status: 'Pending'
                 }, {
                     where: {
-                        RPBP_Id: studentRideAvailed.dataValues.SRA_RPBP_Id
+                        RPBP_Id: rideProviderRideProvided.dataValues.RPRP_RPBP_Id
                     }, transaction
                 })
             }
@@ -502,7 +535,7 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
 
         await transaction.commit()
 
-        res.status(201).send()
+        res.status(201).send('Ride successfully cancelled')
 
     } catch (e) {
         await transaction.rollback()

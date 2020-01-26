@@ -17,6 +17,9 @@ const StudentRideAvailed = sequelize.define('StudentRideAvailed', {
         type: DataTypes.INTEGER
     }, SRA_Status: {
         type: DataTypes.STRING
+    }, SRA_Comments: {
+        type: DataTypes.STRING,
+        len: [0, 1001]
     }
 }, {
     timestamps: false,
