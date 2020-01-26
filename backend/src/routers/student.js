@@ -58,15 +58,34 @@ router.post('/StudentRideRequest', async (req, res) => {
     2. Note: Comments field must be passed as RRBS_Comments as the object is directly being passed as object
 
     */
+   const transaction = await sequelize.transaction()
     try {
-
-        const rideRequestedByStudent = await RidesRequestedByStudent.create(req.body, {
-            fields: ['RRBS_S_Id', 'RRBS_Date', 'RRBS_Time', 'RRBS_Air_Code', 'RRBS_T_Number',
-                'RRBS_Seats', 'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip', 'RRBS_Comments']
+        req.body.RRBS_Date = new Date(req.body.RRBS_Date)
+        const isAlreadyRequested = await RidesRequestedByStudent.findOne({
+            where: {
+                RRBS_S_Id: req.body.RRBS_S_Id,
+                RRBS_Date: req.body.RRBS_Date
+            }, transaction
         })
+        var rideRequestedByStudent = null
 
+        if(!isAlreadyRequested) {
+            rideRequestedByStudent = await RidesRequestedByStudent.create(req.body, {
+                fields: ['RRBS_S_Id', 'RRBS_Date', 'RRBS_Time', 'RRBS_Air_Code', 'RRBS_T_Number',
+                    'RRBS_Seats', 'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip', 'RRBS_Comments'],
+                    transaction
+            })
+        } else {
+            const error = new Error()
+            error.message = 'Request already exists for same day'
+            error.description = 'Cannot book 2 rides for same day'
+            throw error
+        }
+
+        await transaction.commit()
         res.status(201).send(rideRequestedByStudent)
     } catch (e) {
+        await transaction.rollback()
         res.status(400).send(e)
     }
 })
@@ -74,6 +93,7 @@ router.post('/StudentRideRequest', async (req, res) => {
 // Get fresh rides
 router.get('/GetBrandNewRidesPostedByProvider', async (req, res) => {
     try {
+        req.body.travelDate = new Date(req.body.travelDate)
         const { gte, gt, in: opIn } = Sequelize.Op;
         const ridesPostedByProvider = await RidesPostedByProvider.findAll({
             where: {
@@ -97,7 +117,7 @@ router.get('/GetBrandNewRidesPostedByProvider', async (req, res) => {
 // Get already booked rides
 router.get('/GetAlreadyBookedRidesForStudent', async (req, res) => {
     try {
-
+        req.body.travelDate=new Date(req.body.travelDate)
         const { gte, gt, between, in: opIn } = Sequelize.Op;
         const rides = await Ride.findAll({
             attributes: ['R_Id', 'R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code', 'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total'],
@@ -545,7 +565,7 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
         if (ride.dataValues.R_Current === 0) {
             await Ride.update({
                 R_Status: 'Cancelled',
-                R_Comments: 'All students cancelled the ride. Automatic cancellation'
+                R_Comments: 'All students cancelled the ride. Automatic cancellation.'
             }, {
                 where: {
                     R_Id: req.body.R_Id

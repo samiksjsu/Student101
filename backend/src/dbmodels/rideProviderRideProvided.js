@@ -19,12 +19,10 @@ const RideProviderRideProvided = sequelize.define('Ride_Provider_Ride_Provided',
         allowNull: false
     }, RPRP_Status: {
         type: DataTypes.STRING
-    },RPRP_Rating:{
-        type:DataTypes.FLOAT,
-        validate:{
-            max:5,
-            min:1
-        }
+    }, RPRP_Rating: {
+        type: DataTypes.FLOAT
+    }, RPRP_Comments: {
+        type: DataTypes.STRING
     }
 }, {
     tableName: 'Ride_Provider_Ride_Provided',

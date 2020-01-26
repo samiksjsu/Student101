@@ -31,6 +31,9 @@ const Ride = sequelize.define('Ride', {
     R_Status: {
         type: DataTypes.STRING,
         defaultValue: 'Active'
+    },
+    R_Comments: {
+        type: DataTypes.STRING
     }
 }, {
     timestamps: false,

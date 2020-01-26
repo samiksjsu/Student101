@@ -18,8 +18,7 @@ const StudentRideAvailed = sequelize.define('StudentRideAvailed', {
     }, SRA_Status: {
         type: DataTypes.STRING
     }, SRA_Comments: {
-        type: DataTypes.STRING,
-        len: [0, 1001]
+        type: DataTypes.STRING
     }
 }, {
     timestamps: false,

@@ -44,13 +44,19 @@ router.post('/RideProviderLogin', async (req, res) => {
 
 router.post('/ProviderRidePost', async (req, res) => {
 
+    const transaction = await sequelize.transaction()
     try {
+        req.body.RPBP_Date = new Date(req.body.RPBP_Date)
+
         const ridePostedByProvider = await RidesPostedByProvider.create(req.body, {
-            fields: ['RPBP_Drivers_License', 'RPBP_Date', 'RPBP_Time', 'RPBP_From', 'RPBP_Current', 'RPBP_Total', 'RPBP_Comments']
+            fields: ['RPBP_Drivers_License', 'RPBP_Date', 'RPBP_Time', 'RPBP_From', 'RPBP_Current', 'RPBP_Total', 'RPBP_Comments'],
+            transaction
         })
 
+        await transaction.commit()
         res.status(201).send(ridePostedByProvider)
     } catch (e) {
+        await transaction.rollback()
         res.status(400).send(e)
     }
 
@@ -92,8 +98,23 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
         const studentRideAvailed = await StudentRideAvailed.create({
             SRA_S_Id: rideRequestedByStudent.dataValues.RRBS_S_Id,
             SRA_Ride_Id: ride.dataValues.id,
-            SRA_Rating: 0.0
+            SRA_Rating: 0.0,
+            SRA_Seats: rideRequestedByStudent.dataValues.RRBS_Seats,
+            SRA_RRBS_Id: rideRequestedByStudent.dataValues.RRBS_Id
         }, {
+            transaction
+        })
+
+        await RideProviderRideProvided.create({
+            RPRP_P_Drivers_License: P_Drivers_License,
+            RPRP_R_Id: ride.dataValues.id,
+            RPRP_S_Id: rideRequestedByStudent.dataValues.RRBS_S_Id,
+            RPRP_RRBS_Id: RRBS_Id,
+            RPRP_Status: 'Active',
+            RPRP_Rating: 0.0,
+            RPRP_Comments: ""
+        }, {
+            fields: ['RPRP_P_Drivers_License', 'RPRP_R_Id', 'RPRP_S_Id', 'RPRP_RRBS_Id', 'RPRP_Status', 'RPRP_Rating', 'RPRP_Comments'],
             transaction
         })
 
@@ -133,10 +154,10 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
         })
 
         // Construct the email is
-        const mailObject = student.dataValues.S_Email.toString() + ',' + rideProvider.dataValues.P_Email.toString()
+        //const mailObject = student.dataValues.S_Email.toString() + ',' + rideProvider.dataValues.P_Email.toString()
 
         // Send email
-        sendEmail(mailObject)
+        // sendEmail(mailObject)
 
         // Commit the transactions
         transaction.commit()
@@ -148,7 +169,7 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
     } catch (e) {
         transaction.rollback()
         console.log('Rolling back transaction')
-        res.status(400).send('Transaction failed')
+        res.status(400).send(e)
     }
 
 })
@@ -159,6 +180,7 @@ router.post('/CancelRideByProvider', async (req, res) => {
     try {
         const R_Id = req.body.R_Id
         const P_Drivers_License = req.body.P_Drivers_License
+        const Comments = req.body.Comments
         const { ne } = Sequelize.Op
 
         await StudentRideAvailed.update({
@@ -231,19 +253,19 @@ router.post('/MarkRideAsCompleted', async (req, res) => {
         })
 
         await Ride.update({
-            R_Status:'Completed'
-        },{
-            where:{
-                R_Id:R_Id
-            },transaction
+            R_Status: 'Completed'
+        }, {
+            where: {
+                R_Id: R_Id
+            }, transaction
         })
 
         await RideProviderRideProvided.update({
-            RPRP_Status:'Completed'
-        },{
-            where:{
-                RPRP_R_Id:R_Id
-            },transaction
+            RPRP_Status: 'Completed'
+        }, {
+            where: {
+                RPRP_R_Id: R_Id
+            }, transaction
         })
 
         await transaction.commit()
@@ -257,20 +279,25 @@ router.post('/MarkRideAsCompleted', async (req, res) => {
         })
         const rideProvider = await RideProvider.findByPk(ride.dataValues.R_Accepted_By)
         const studentRideAvailed = await StudentRideAvailed.findAll({ SRA_Ride_Id: R_Id })
-        const students = await sequelize.query('select S_Id, S_Name, S_Email, S_Phone from Student inner join Student_Ride_Availed on S_Id = SRA_S_Id ' + 
+        const students = await sequelize.query('select S_Id, S_Name, S_Email, S_Phone from Student inner join Student_Ride_Availed on S_Id = SRA_S_Id ' +
             'and SRA_Ride_Id = ' + R_Id)
-        
+
         var emails = ''
-        //console.log(students)
+
+        /*
+        send emails to all the students of the ride and the ride provider
+        student emails available in emails object
+        */
+
         students[0].forEach(element => {
-            emails+=element.S_Email + ','
+            emails += element.S_Email + ','
         });
         var emails = emails.slice(0, -1);
 
         //send email; after this
 
-        
-        res.status(201).send(students)
+
+        res.status(201).send(emails)
 
     } catch (e) {
         res.status(400).send(e)
@@ -278,8 +305,7 @@ router.post('/MarkRideAsCompleted', async (req, res) => {
 })
 
 //Rate Student by provider 
-
-router.post('/RateStudent',async(req,res)=>{
+router.post('/RateStudent', async (req, res) => {
     //Steps done in Rate Student are as follows
     //1.Take R_Id,S_Id and Rating in input
     //2.Update the rating in Student Ride Availed for the given S_Id and R_Id
@@ -287,41 +313,41 @@ router.post('/RateStudent',async(req,res)=>{
     //4.Calculate the new rating 
     //5.Update the new rating in Student table
     const transaction = await sequelize.transaction()
-    try{
+    try {
         const R_Id = req.body.R_Id
         const S_Id = req.body.S_Id
         const Rating = req.body.Rating
 
         await StudentRideAvailed.update({
-            SRA_Rating:Rating
-        },{
-            where:{
-                SRA_S_Id:S_Id,
-                SRA_Ride_Id:R_Id
-            },transaction
+            SRA_Rating: Rating
+        }, {
+            where: {
+                SRA_S_Id: S_Id,
+                SRA_Ride_Id: R_Id
+            }, transaction
         })
 
         const student = await Student.findOne({
-            where:{
-                S_Id:S_Id
-            },transaction
+            where: {
+                S_Id: S_Id
+            }, transaction
         })
 
-        
-        const newStudentRating = (parseInt(student.dataValues.S_Rating*student.dataValues.S_Rated_By) + parseInt(Rating))/(parseInt(student.dataValues.S_Rated_By)+1)
+
+        const newStudentRating = (parseInt(student.dataValues.S_Rating * student.dataValues.S_Rated_By) + parseInt(Rating)) / (parseInt(student.dataValues.S_Rated_By) + 1)
 
         await Student.update({
-            S_Rating:newStudentRating,
-            S_Rated_By:sequelize.literal('S_Rated_By +1')
-        },{
-            where:{
-                S_Id:S_Id
-            },transaction
+            S_Rating: newStudentRating,
+            S_Rated_By: sequelize.literal('S_Rated_By +1')
+        }, {
+            where: {
+                S_Id: S_Id
+            }, transaction
         })
-        
+
         await transaction.commit()
         res.send('Rating Added Successfully')
-    }catch(e){
+    } catch (e) {
         await transaction.rollback()
         res.status(400).send()
     }

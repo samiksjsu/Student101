@@ -33,8 +33,7 @@ const RidesPostedByProvider = sequelize.define('RidesPostedByProvider', {
         type: DataTypes.STRING
     }, 
     RPBP_Comments: {
-        type: DataTypes.STRING,
-        len: [0, 1001]
+        type: DataTypes.STRING
     }
 }, {
     timestamps: false,

@@ -7,13 +7,10 @@ const RidesRequestedByStudent = sequelize.define('Rides_Requested_By_Student',{
     },
     RRBS_S_Id:{
         type:DataTypes.STRING,
-        validate:{
-            len:[10,10]
-        },
         allowNull:false
     }, 
     RRBS_Date:{
-        type:DataTypes.DATE,
+        type:DataTypes.DATEONLY,
         allowNull:false
     }, 
     RRBS_Time:{
@@ -53,8 +50,7 @@ const RidesRequestedByStudent = sequelize.define('Rides_Requested_By_Student',{
         defaultValue: 'Pending'
     },
     RRBS_Comments: {
-        type: DataTypes.STRING,
-        len: [0, 1001]
+        type: DataTypes.STRING
     }  
 },{
     timestamps:false,

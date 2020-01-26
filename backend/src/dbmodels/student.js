@@ -8,10 +8,7 @@ const Student = sequelize.define('Student', {
     S_Id: {
         type: DataTypes.STRING,
         primaryKey: true,
-        allowNull: false,
-        validate: {
-            len: 9
-        }
+        allowNull: false
     },
     S_Name: {
         type: DataTypes.STRING,
@@ -64,8 +61,8 @@ Student.findByCredentials = async (req) => {
 
     if (!student) {
         const error = new Error()
-        error.message = 'Unable to login.No user with email is present'
-        error.description = 'Not Valid Login'
+        error.message = 'Invalid Credentials'
+        error.description = 'Invalid Credentials'
         throw error
     }
 
@@ -73,8 +70,8 @@ Student.findByCredentials = async (req) => {
 
     if (!isMatch) {
         const error = new Error()
-        error.message = 'User id and password does not match'
-        error.description = 'Not Valid Login'
+        error.message = 'Invalid Credentials'
+        error.description = 'Invalid Credentials'
         throw error
     }
 

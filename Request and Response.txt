@@ -1,0 +1,244 @@
+1. Student signup
+
+REQ:
+{
+	"S_Id":"014500889",
+	"S_Name":"Samik Biswas",
+	"S_Email":"samikdada@gmail.com",
+	"S_Password":"cyberplanning_92",
+	"S_Phone":"8446183130",
+	"S_University":"San Jose State University"
+}
+
+RES:
+{
+    "S_Id": "014500889",
+    "S_Name": "Samik Biswas",
+    "S_Email": "samikdada@gmail.com",
+    "S_Phone": "8446183130",
+    "S_University": 1
+}
+
+---------------------------------------
+
+2. Student Login
+
+REQ:
+{
+	"S_Email": "samikdada@gmail.com",
+	"S_Password": "cyberplanning_92"
+}
+
+RES:
+{
+    "student": {
+        "S_Id": "014500889",
+        "S_Name": "Samik Biswas",
+        "S_Email": "samikdada@gmail.com",
+        "S_Phone": 8446183130,
+        "S_University": 1,
+        "S_Rating": 0,
+        "S_Rated_By": 0
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiJzYW1pa2RhZGFAZ21haWwuY29tIiwiaWF0IjoxNTgwMDEwNTIzfQ.06w28SdboTdo8x1UHDCf6bfMqckxy3-FR18AmTQZWB8"
+}
+
+---------------------------------------
+
+3. Ride provider signup:
+
+REQ:
+{
+	"P_Drivers_License": "MH12MQ7649",
+	"P_Password": "cyberplanning_92",
+	"P_Name": "Samik Biswas",
+	"P_Phone": "8446183130",
+	"P_Email": "samik.biswas92@gmail.com",
+	"P_University": "San Jose State University"
+}
+
+RES:
+{
+    "P_Drivers_License": "MH12MQ7649",
+    "P_Name": "Samik Biswas",
+    "P_Phone": "8446183130",
+    "P_Email": "samik.biswas92@gmail.com",
+    "P_University": 1
+}
+
+----------------------------------------
+
+4. Stundent post ride request:
+
+REQ:
+{
+	"RRBS_S_Id":"014500889", 
+	"RRBS_Date":"26-JAN-2020", 
+	"RRBS_Time":"12:00", 
+	"RRBS_Air_Code":"SFO", 
+	"RRBS_T_Number":"1", 
+	"RRBS_Seats":"3", 
+	"RRBS_Street":"101 E", 
+	"RRBS_City":"San Jose", 
+	"RRBS_State":"CA", 
+	"RRBS_Zip":"95112",
+	"RRBS_Comments": "Need 2 extra seats for bags."
+}
+
+RES:
+{
+    "RRBS_Status": "Pending",
+    "RRBS_Id": null,
+    "RRBS_S_Id": "014500889",
+    "RRBS_Date": "2020-01-26T08:00:00.000Z",
+    "RRBS_Time": "12:00",
+    "RRBS_Air_Code": "SFO",
+    "RRBS_T_Number": "1",
+    "RRBS_Seats": "3",
+    "RRBS_Street": "101 E",
+    "RRBS_City": "San Jose",
+    "RRBS_State": "CA",
+    "RRBS_Zip": "95112",
+	"RRBS_Comments": "Need 2 extra seats for bags."
+}
+
+------------------------------------------
+
+5. Ride posted by provider:
+
+REQ:
+{
+	"RPBP_Drivers_License": "MH12PE4970",
+	"RPBP_Date": "27-FEB-2020",
+	"RPBP_Time": "11:30",
+	"RPBP_From": "SFO",
+	"RPBP_Current": "0",
+	"RPBP_Total": "3",
+	"RPBP_Comments": "Jaldi aana."
+}
+
+RES:
+{
+    "RPBP_Id": null,
+    "RPBP_Drivers_License": "MH12PE4970",
+    "RPBP_Date": "2020-02-27",
+    "RPBP_Time": "11:30",
+    "RPBP_From": "SFO",
+    "RPBP_Current": "0",
+    "RPBP_Total": "3",
+    "RPBP_Comments": "Jaldi aana."
+}
+
+-----------------------------------------------------
+
+6. Get Fresh Rides posted by Provider
+
+REQ:
+{
+	"seats": "1",
+	"from": "SFO",
+	"travelDate": "26-Feb-2020"
+}
+
+RES:
+[
+    {
+        "RPBP_Id": 5,
+        "RPBP_Drivers_License": "MH12MQ7649",
+        "RPBP_Date": "2020-02-26",
+        "RPBP_Time": "11:30:00",
+        "RPBP_From": "SFO",
+        "RPBP_Current": 0,
+        "RPBP_Total": 3,
+        "RPBP_Status": "Pending",
+        "RPBP_Comments": "Jaldi aana."
+    },
+    {
+        "RPBP_Id": 7,
+        "RPBP_Drivers_License": "MH12PE4970",
+        "RPBP_Date": "2020-02-26",
+        "RPBP_Time": "18:30:00",
+        "RPBP_From": "SFO",
+        "RPBP_Current": 0,
+        "RPBP_Total": 5,
+        "RPBP_Status": "Pending",
+        "RPBP_Comments": "Time pe aa jana chutiye"
+    }
+]
+---------------------------------------------------------
+
+7. Book fresh Ride for student
+
+REQ:
+{
+	"RPBP_Id": "7",
+	"seats": 2,
+	"Terminal": 2,
+	"S_Id": "014500889",
+	"Street": "168 Aghore Sarani",
+    "City": "Kolkata",
+    "State": "WB",
+    "Zip": "70014"
+}
+
+RES:
+Ride Successfully Booked
+
+------------------------------------------------------------
+
+8. Get Already Book Rides for Students
+REQ:
+{
+	"seats": "3",
+	"from": "SFO",
+	"travelDate": "26-FEB-2020"
+}
+
+RES:
+[
+    {
+        "R_Id": 1,
+        "R_Date": "2020-02-26",
+        "R_Time": "18:30:00",
+        "R_Rating": 0,
+        "R_Starting_Air_Code": "SFO",
+        "R_Starting_Terminal": "2",
+        "R_Accepted_By": "MH12PE4970",
+        "R_Current": 2,
+        "R_Total": 5
+    }
+]
+
+-----------------------------------------------------------
+
+9. Book Already Booked Rides For Student
+
+REQ:
+{
+	"R_Id": "1",
+	"S_Id": "014512706",
+	"seats": "3",
+	"Street": "Santa Clara",
+    "City": "San Jose",
+    "State": "CA",
+    "Zip": "95226"
+}
+
+RES:
+Ride booked successfully
+
+----------------------------------------------------------------
+
+10. Ride Provider Accept Ride(/StudentRideAcceptedByProvider)
+
+REQ:
+{
+	"RRBS_Id": "12" ,
+	"P_Drivers_License": "MH12MQ7649",
+	"capacity": "4"
+}
+
+RES:
+{
+    "Message": "Ride Accepted Successfully"
+}

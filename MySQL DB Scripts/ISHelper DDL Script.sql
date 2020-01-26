@@ -10,7 +10,7 @@ U_Zip int not null
 create table Student (
 S_Id varchar(10) primary key,
 S_Name varchar (50) not null,
-S_Email varchar (500) not null,
+S_Email varchar (500) not null unique,
 S_Password varchar(5000) not null,
 S_Phone BigInt not null unique,
 S_University int not null,
@@ -75,6 +75,7 @@ R_Accepted_By varchar(10),
 R_Current int,
 R_Total int,
 R_Status varchar(10) default 'Active',
+R_Comments varchar (5000),
 foreign key (R_Accepted_By) references Ride_Provider(P_Drivers_License)
 );
 
@@ -94,7 +95,7 @@ SRA_Rating float,
 SRA_RRBS_Id int, 
 SRA_RPBP_Id int, 
 SRA_Status varchar(10) default 'Active',
-SRA_Comments varchar (1000),
+SRA_Comments varchar (5000),
 primary key (SRA_S_Id, SRA_Ride_Id),
 foreign key (SRA_S_Id) references Student(S_Id),
 foreign key (SRA_Ride_Id) references Ride(R_Id)
@@ -138,6 +139,7 @@ RRBS_City varchar(50) not null,
 RRBS_State varchar(50) not null,
 RRBS_Zip int not null,
 RRBS_Status varchar(20) DEFAULT 'Pending',
+RRBS_Comments varchar(5000),
 foreign key (RRBS_Air_Code, RRBS_T_Number) references Terminal(T_Air_Code, T_Number),
 foreign key (RRBS_S_Id) references Student(S_Id)
 );
@@ -151,6 +153,7 @@ RPBP_From varchar(4) not null,
 RPBP_Current int default 0,
 RPBP_Total int not null,
 RPBP_Status varchar(20) DEFAULT 'Pending',
+RPBP_Comments varchar(5000),
 foreign key (RPBP_Drivers_License) references Ride_Provider(P_Drivers_License),
 foreign key (RPBP_From) references Airport(Air_Code)
 );
@@ -174,6 +177,7 @@ RPRP_RPBP_Id int,
 RPRP_RRBS_Id int,
 RPRP_Status varchar(10) default 'Active',
 RPRP_Rating float default 0,
+RPRP_Comments varchar(5000),
 foreign key (RPRP_P_Drivers_License) references ride_provider(P_Drivers_License),
 foreign key (RPRP_R_Id) references ride(R_Id),
 foreign key (RPRP_S_Id) references student(S_Id),
