@@ -47,11 +47,22 @@ router.post('/StudentLogin', async (req, res) => {
 
 // StudentRideRequest
 router.post('/StudentRideRequest', async (req, res) => {
+
+    /*
+    Input:
+    ------
+
+    1. 'RRBS_S_Id', 'RRBS_Date', 'RRBS_Time', 'RRBS_Air_Code', 'RRBS_T_Number',
+        'RRBS_Seats', 'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip', 'RRBS_Comments'
+
+    2. Note: Comments field must be passed as RRBS_Comments as the object is directly being passed as object
+
+    */
     try {
 
         const rideRequestedByStudent = await RidesRequestedByStudent.create(req.body, {
             fields: ['RRBS_S_Id', 'RRBS_Date', 'RRBS_Time', 'RRBS_Air_Code', 'RRBS_T_Number',
-                'RRBS_Seats', 'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip']
+                'RRBS_Seats', 'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip', 'RRBS_Comments']
         })
 
         res.status(201).send(rideRequestedByStudent)
@@ -400,7 +411,7 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
     try {
         const R_Id = req.body.R_Id
         const S_Id = req.body.S_Id
-        const SRA_Comments = req.body.Comments
+        const Comments = req.body.Comments
 
         /*
         Steps:
@@ -415,43 +426,64 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
             b. If the current seats has become 0 in the ride table and it was initially , mark the reqest in the ride_posted_by_provider as pending
                and mark the ride as cancelled.
         */
+
+        /*
+        Inputs:
+        -------
+
+        1. Ride to be cancelled as R_Id
+        2. Student id of the student cancelling the ride as S_Id
+        3. Comments to be posted as reason as Comments
+        */
+
+
+        // 1st mark the ride as cancelled in student ride availed
         await StudentRideAvailed.update({
-            SRA_Status: 'Cancelled'
+            SRA_Status: 'Cancelled',
+            SRA_Comments: 'Ride cancelled by student.\n' + Comments
         }, {
             where: {
-                SRA_Ride_Id: req.body.R_Id,
-                SRA_S_Id: req.body.S_Id
+                SRA_Ride_Id: R_Id,
+                SRA_S_Id: S_Id
             }, transaction
         })
 
+        // Get the details of the ride from student_ride_availed.
+        // Because there are details such as whether it was a ride provider request, a student request and no. of seats
+        // that would be required later.
         const studentRideAvailed = await StudentRideAvailed.findOne({
             attributes: ['SRA_S_Id', 'SRA_Ride_Id', 'SRA_Rating', 'SRA_RRBS_Id', 'SRA_RPBP_Id', 'SRA_Status', 'SRA_Seats'],
             where: {
-                SRA_Ride_Id: req.body.R_Id,
-                SRA_S_Id: req.body.S_Id
+                SRA_Ride_Id: R_Id,
+                SRA_S_Id: S_Id
             }, transaction
         })
 
+        // Substract the same number of seats from the ride in ride table
         await Ride.update({
             R_Current: sequelize.literal('Ride.R_Current - ' + studentRideAvailed.dataValues.SRA_Seats)
         }, {
             where: {
-                R_Id: req.body.R_Id
+                R_Id: R_Id
             }, transaction
         })
 
+        // Fetch the ride, details to be used later
         const ride = await Ride.findOne({
             attributes: ['R_Id', 'R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code',
                 'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total', 'R_Status'],
             where: {
-                R_Id: req.body.R_Id
+                R_Id: R_Id
             }, transaction
         })
 
+
+        // Since the ride was never taken, there is no point keeping the address.
+        // Hence, deleting the same
         const rideAddress = await RideAddress.findOne({
             where: {
-                RA_S_Id: req.body.S_Id,
-                RA_R_Id: req.body.R_Id
+                RA_S_Id: S_Id,
+                RA_R_Id: R_Id
             }, transaction
         })
 
@@ -461,22 +493,30 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
 
 
         await RideProviderRideProvided.update({
-            RPRP_Status: 'Cancelled'
+            RPRP_Status: 'Cancelled',
+            RPRP_Comments: 'Ride cancelled by student.\n' + Comments
         }, {
             where: {
-                RPRP_R_Id: req.body.R_Id,
-                RPRP_S_Id: req.body.S_Id
+                RPRP_R_Id: R_Id,
+                RPRP_S_Id: S_Id
             }, transaction
         })
 
+        // If the cancelled ride was requested by same student, masrk the request as pending
         if (studentRideAvailed.dataValues.SRA_RRBS_Id) {
-            const rideRequestedByStudent = RidesRequestedByStudent.findOne({
-                attributes: ['RRBS_Id', 'RRBS_S_Id', 'RRBS_Date', 'RRBS_Time', 'RRBS_Air_Code', 'RRBS_T_Number',
-                    'RRBS_Seats', 'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip', 'RRBS_Status'],
-                where: {
-                    RRBS_Id: studentRideAvailed.dataValues.SRA_RRBS_Id
-                }
-            })
+
+            /*
+            Commenting this part as well.
+            Not sure why we are fetching the request details as we can directly update the request as pending.
+            Verify later
+            */ 
+            // const rideRequestedByStudent = RidesRequestedByStudent.findOne({
+            //     attributes: ['RRBS_Id', 'RRBS_S_Id', 'RRBS_Date', 'RRBS_Time', 'RRBS_Air_Code', 'RRBS_T_Number',
+            //         'RRBS_Seats', 'RRBS_Street', 'RRBS_City', 'RRBS_State', 'RRBS_Zip', 'RRBS_Status'],
+            //     where: {
+            //         RRBS_Id: studentRideAvailed.dataValues.SRA_RRBS_Id
+            //     }
+            // })
             
 
             // Verify this change
@@ -494,35 +534,35 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
                 RRBS_Status: 'Pending'
             }, {
                 where: {
-                    RRBS_Id: rideRequestedByStudent.dataValues.RRBS_Id
-                }
+                    RRBS_Id: studentRideAvailed.dataValues.SRA_RRBS_Id
+                }, transaction
             })
         }
 
+        // Now if all the students have cancelled the ride, there is no point keeping the ride.
+        // Hence marking the ride as cancelled, updating the comments accordingly
+        // Next check if it was ride provider request, if yes, mark that request as pending
         if (ride.dataValues.R_Current === 0) {
             await Ride.update({
-                R_Status: 'Cancelled'
+                R_Status: 'Cancelled',
+                R_Comments: 'All students cancelled the ride. Automatic cancellation'
             }, {
                 where: {
                     R_Id: req.body.R_Id
                 }, transaction
             })
 
-            // Find out the reason behind this
-            if (studentRideAvailed.dataValues.SRA_RPBP_Id) {
-                
-                // Changed from only Ride_id to 2 conditons. Check the != condition below. Check whiteboard to get reason
-                // for the change
-                const { ne } = Sequelize.Op
-                const rideProviderRideProvided = await RideProviderRideProvided.findOne({
-                    where: {
-                        RPRP_R_Id: req.body.R_Id,
-                        RPRP_RPBP_Id: {
-                            [ne]: null
-                        }
-                    }, transaction
-                })
+            const { ne } = Sequelize.Op
+            const rideProviderRideProvided = await RideProviderRideProvided.findOne({
+                where: {
+                    RPRP_R_Id: req.body.R_Id,
+                    RPRP_RPBP_Id: {
+                        [ne]: null
+                    }
+                }, transaction
+            })
 
+            if (rideProviderRideProvided) {
                 await RidesPostedByProvider.update({
                     RPBP_Status: 'Pending'
                 }, {
@@ -532,7 +572,12 @@ router.post('/CancelRideBookedByStudent', async (req, res) => {
                 })
             }
         }
-        
+
+
+        // Update comments after cancellation of ride.
+        // Since student is cancelling the ride, comments should be visible to RP.
+        // Hence update the comments at ride_provider_ride_provided.
+        // Use columns RPRP_R_Id and RPRP_S_Id
 
         await transaction.commit()
 
@@ -623,7 +668,6 @@ router.post('/RateProvider', async (req, res) => {
         res.status(400).send()
     }
 })
-
 
 
 module.exports = router

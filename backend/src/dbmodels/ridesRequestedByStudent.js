@@ -51,8 +51,11 @@ const RidesRequestedByStudent = sequelize.define('Rides_Requested_By_Student',{
     RRBS_Status:{
         type:DataTypes.STRING,
         defaultValue: 'Pending'
-    }
-    
+    },
+    RRBS_Comments: {
+        type: DataTypes.STRING,
+        len: [0, 1001]
+    }  
 },{
     timestamps:false,
     tableName:'Rides_Requested_By_Student'

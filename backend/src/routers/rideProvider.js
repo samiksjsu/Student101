@@ -46,7 +46,7 @@ router.post('/ProviderRidePost', async (req, res) => {
 
     try {
         const ridePostedByProvider = await RidesPostedByProvider.create(req.body, {
-            fields: ['RPBP_Drivers_License', 'RPBP_Date', 'RPBP_Time', 'RPBP_From', 'RPBP_Current', 'RPBP_Total']
+            fields: ['RPBP_Drivers_License', 'RPBP_Date', 'RPBP_Time', 'RPBP_From', 'RPBP_Current', 'RPBP_Total', 'RPBP_Comments']
         })
 
         res.status(201).send(ridePostedByProvider)
@@ -162,7 +162,8 @@ router.post('/CancelRideByProvider', async (req, res) => {
         const { ne } = Sequelize.Op
 
         await StudentRideAvailed.update({
-            SRA_Status: 'Cancelled'
+            SRA_Status: 'Cancelled',
+            SRA_Comments: 'Ride cancelled by ride provider:\n' + Comments
         }, {
             where: {
                 SRA_Ride_Id: R_Id
@@ -170,15 +171,17 @@ router.post('/CancelRideByProvider', async (req, res) => {
         })
 
         await Ride.update({
-            R_Status: 'Cancelled'
+            R_Status: 'Cancelled',
+            R_Comments: 'Ride cancelled by ride provider.\n' + Comments
         }, {
             where: {
-                R_Id: R_Id
+                R_Id
             }, transaction
         })
 
         await RideProviderRideProvided.update({
-            RPRP_Status: 'Cancelled'
+            RPRP_Status: 'Cancelled',
+            RPRP_Comments: 'Ride cancelled by ride provider.\n' + Comments
         }, {
             where: {
                 RPRP_R_Id: R_Id
@@ -203,6 +206,7 @@ router.post('/CancelRideByProvider', async (req, res) => {
                 }, transaction
             })
         }
+
         await transaction.commit()
         res.status(201).send()
 
