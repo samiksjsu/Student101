@@ -277,6 +277,54 @@ router.post('/MarkRideAsCompleted', async (req, res) => {
     }
 })
 
+//Rate Student by provider 
 
+router.post('/RateStudent',async(req,res)=>{
+    //Steps done in Rate Student are as follows
+    //1.Take R_Id,S_Id and Rating in input
+    //2.Update the rating in Student Ride Availed for the given S_Id and R_Id
+    //3.Fetch the student from table for whom the rating is given
+    //4.Calculate the new rating 
+    //5.Update the new rating in Student table
+    const transaction = await sequelize.transaction()
+    try{
+        const R_Id = req.body.R_Id
+        const S_Id = req.body.S_Id
+        const Rating = req.body.Rating
+
+        await StudentRideAvailed.update({
+            SRA_Rating:Rating
+        },{
+            where:{
+                SRA_S_Id:S_Id,
+                SRA_Ride_Id:R_Id
+            },transaction
+        })
+
+        const student = await Student.findOne({
+            where:{
+                S_Id:S_Id
+            },transaction
+        })
+
+        
+        const newStudentRating = (parseInt(student.dataValues.S_Rating*student.dataValues.S_Rated_By) + parseInt(Rating))/(parseInt(student.dataValues.S_Rated_By)+1)
+
+        await Student.update({
+            S_Rating:newStudentRating,
+            S_Rated_By:sequelize.literal('S_Rated_By +1')
+        },{
+            where:{
+                S_Id:S_Id
+            },transaction
+        })
+        
+        await transaction.commit()
+        res.send('Rating Added Successfully')
+    }catch(e){
+        await transaction.rollback()
+        res.status(400).send()
+    }
+})
 
 module.exports = router

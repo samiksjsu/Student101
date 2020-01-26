@@ -600,6 +600,7 @@ router.get('/GetCompletedRidesByStudent', async (req, res) => {
     }
 })
 
+// Give rating for the provider
 router.post('/RateProvider', async (req, res) => {
     const transaction = await sequelize.transaction()
     try{

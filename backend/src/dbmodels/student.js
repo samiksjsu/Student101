@@ -40,7 +40,14 @@ const Student = sequelize.define('Student', {
     S_University: {
         type: DataTypes.INTEGER,
         allowNull: false
+    },
+    S_Rating:{
+        type:DataTypes.FLOAT
+    },
+    S_Rated_By:{
+        type:DataTypes.INTEGER
     }
+
 }, {
     tableName: 'Student',
     timestamps: false
