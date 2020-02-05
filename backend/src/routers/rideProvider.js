@@ -1,4 +1,4 @@
-const { sequelize, DataTypes } = require('../db/conn')
+const { sequelize, DataTypes, Sequelize } = require('../db/conn')
 const RideProvider = require('../dbmodels/rideProvider')
 const RidesPostedByProvider = require('../dbmodels/ridesPostedByProvider')
 const RidesRequestedByStudent = require('../dbmodels/ridesRequestedByStudent')
@@ -176,25 +176,36 @@ router.post('/StudentRideAcceptedByProvider', async (req, res) => {
 
 //cancel whole ride by ride provider
 router.post('/CancelRideByProvider', async (req, res) => {
-    const transaction = sequelize.transaction()
+
+    const transaction = await sequelize.transaction()
+
     try {
         const R_Id = req.body.R_Id
         const P_Drivers_License = req.body.P_Drivers_License
-        const Comments = req.body.Comments
-        const { ne } = Sequelize.Op
+        const Comments = 'Ride cancelled by ride provider: ' + req.body.Comments
 
+        console.log({
+            R_Id,
+            P_Drivers_License,
+            Comments
+        })
+
+        const { ne } = Sequelize.Op;
+        console.log('after ne ')
         await StudentRideAvailed.update({
             SRA_Status: 'Cancelled',
-            SRA_Comments: 'Ride cancelled by ride provider:\n' + Comments
+            SRA_Comments: Comments
         }, {
             where: {
                 SRA_Ride_Id: R_Id
             }, transaction
         })
 
+        console.log('after SRA update')
+
         await Ride.update({
             R_Status: 'Cancelled',
-            R_Comments: 'Ride cancelled by ride provider.\n' + Comments
+            R_Comments: Comments
         }, {
             where: {
                 R_Id
@@ -203,7 +214,7 @@ router.post('/CancelRideByProvider', async (req, res) => {
 
         await RideProviderRideProvided.update({
             RPRP_Status: 'Cancelled',
-            RPRP_Comments: 'Ride cancelled by ride provider.\n' + Comments
+            RPRP_Comments: Comments
         }, {
             where: {
                 RPRP_R_Id: R_Id
@@ -211,13 +222,15 @@ router.post('/CancelRideByProvider', async (req, res) => {
         })
 
         const rideProviderRideProvided = await RideProviderRideProvided.findOne({
+            attributes: ['RPRP_Id', 'RPRP_P_Drivers_License', 'RPRP_R_Id', 'RPRP_S_Id', 'RPRP_RPBP_Id', 
+            'RPRP_RRBS_Id', 'RPRP_Status', 'RPRP_Rating', 'RPRP_Comments'],
             where: {
                 RPRP_R_Id: R_Id,
                 RPRP_RRBS_Id: {
                     [ne]: null
                 }
-            }
-        }, transaction)
+            }, transaction
+        })
 
         if (rideProviderRideProvided.dataValues.RPRP_RRBS_Id) {
             await RidesRequestedByStudent.update({
@@ -230,13 +243,15 @@ router.post('/CancelRideByProvider', async (req, res) => {
         }
 
         await transaction.commit()
-        res.status(201).send()
+
+        // Email needs to be sent to both ride provider and all the associated students
+        res.status(201).send('Ride successfully cancelled')
 
     } catch (e) {
+        await transaction.rollback()
         res.status(400).send(e)
     }
 })
-
 
 //mark ride as completed
 router.post('/MarkRideAsCompleted', async (req, res) => {

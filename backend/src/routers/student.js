@@ -94,7 +94,7 @@ router.post('/StudentRideRequest', async (req, res) => {
 router.get('/GetBrandNewRidesPostedByProvider', async (req, res) => {
     try {
         req.body.travelDate = new Date(req.body.travelDate)
-        const { gte, gt, in: opIn } = Sequelize.Op;
+        const { gte, gt, eq, in: opIn } = Sequelize.Op;
         const ridesPostedByProvider = await RidesPostedByProvider.findAll({
             where: {
                 RPBP_Total: {
@@ -102,7 +102,10 @@ router.get('/GetBrandNewRidesPostedByProvider', async (req, res) => {
                 },
                 RPBP_Current: 0,
                 RPBP_From: req.body.from,
-                RPBP_Date: req.body.travelDate
+                RPBP_Date: req.body.travelDate,
+                RPBP_Status: {
+                    [eq] : 'Pending'
+                }
             }
         })
 
@@ -118,7 +121,7 @@ router.get('/GetBrandNewRidesPostedByProvider', async (req, res) => {
 router.get('/GetAlreadyBookedRidesForStudent', async (req, res) => {
     try {
         req.body.travelDate=new Date(req.body.travelDate)
-        const { gte, gt, between, in: opIn } = Sequelize.Op;
+        const { gte, eq } = Sequelize.Op;
         const rides = await Ride.findAll({
             attributes: ['R_Id', 'R_Date', 'R_Time', 'R_Rating', 'R_Starting_Air_Code', 'R_Starting_Terminal', 'R_Accepted_By', 'R_Current', 'R_Total'],
             where: {
@@ -126,6 +129,9 @@ router.get('/GetAlreadyBookedRidesForStudent', async (req, res) => {
                 R_Starting_Air_Code: req.body.from,
                 R_Total: {
                     [gte]: sequelize.literal('Ride.R_Current + ' + req.body.seats)
+                },
+                R_Status: {
+                    [eq]: 'Active'
                 }
             }
         })

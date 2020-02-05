@@ -8,7 +8,7 @@ const createTransporter = async (mailObject) => {
             secure: false, // true for 465, false for other ports
             auth: {
               user: 'intlstudenthelper@gmail.com', // generated ethereal user
-              pass: '!Qwerty63!' // generated ethereal password
+              pass: process.env.EMAIL_PASSWORD // generated ethereal password
             },
             tls: {
                 rejectUnauthorized: false

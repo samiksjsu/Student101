@@ -242,3 +242,15 @@ RES:
 {
     "Message": "Ride Accepted Successfully"
 }
+
+----------------------------------------------
+
+11. Mark ride as completed:
+
+REQ:
+{
+	"R_Id":"1"
+}
+
+RES:
+samikdada@gmail.com,kaustubhkulkarni150994@gmail.com (sample emails)
